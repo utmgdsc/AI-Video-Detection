@@ -1,0 +1,26 @@
+# NOTE: These dependencies are a starting point and may change
+# based on team needs and model requirements.
+# Feel free to add/remove packages as needed.
+
+# Core ML
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image/Video processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Audio processing
+librosa>=0.10.0
+torchaudio>=2.0.0
+
+# Utilities
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Optional: for video audio extraction
+moviepy>=1.0.3
+
+# Optional: for better face detection
+# dlib>=19.24.0
+# facenet-pytorch>=2.5.0

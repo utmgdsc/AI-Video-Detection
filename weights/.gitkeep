@@ -1,0 +1,10 @@
+# This folder stores model weights locally.
+# Weights are NOT committed to git (see .gitignore).
+#
+# Download weights and place them here:
+# - xception.pth
+# - efficientnet.pth
+# - mesonet.pth
+# - aasist.pth
+#
+# See backend/README.md for download links.

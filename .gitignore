@@ -1,0 +1,47 @@
+# Data files - never commit datasets
+data/
+
+# Training runs and outputs
+runs/
+outputs/
+checkpoints/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights
+weights/
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.pkl
+
+# Archives
+*.zip
+*.tar.gz
+*.tar
+*.rar
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
