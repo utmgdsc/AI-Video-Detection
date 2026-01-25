@@ -45,3 +45,10 @@ weights/
 # Logs
 *.log
 logs/
+
+# Full model repos (add them locally but don't commit unless small)
+# Team members: if your repo is <10MB, remove from this list and commit it
+backend/models/DeepFake-EfficientNet/
+backend/models/XceptionNet-Detector/
+backend/models/MesoNet/
+backend/models/AASIST/

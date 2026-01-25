@@ -4,7 +4,7 @@ Image Analyzer - detects general image manipulation.
 Uses EfficientNet for image-level deepfake/manipulation detection.
 """
 
-from backend.models import efficientnet
+from backend.models.wrappers import efficientnet
 from backend.preprocessing import image_processor
 
 
