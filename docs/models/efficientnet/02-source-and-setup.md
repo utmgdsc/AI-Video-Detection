@@ -9,7 +9,7 @@
 
 ## What I verified
 
-- Does the repo match the paper description? Partially(Yes/No/Partially)
+- Does the repo match the paper description? Partially
 - Pretrained model available? Yes(Yes/No)
 - Dataset expected by repo: FaceForensic++ Dataset (C23), AIGVDBench
 
@@ -23,7 +23,7 @@ List exactly what you installed (with versions if possible):
 - CUDA (if used):
 - OpenCV: 4.13.0.90
 - Other deps:
-Checkout requirement.txt
+Checkout requirements.txt
 ## Setup steps (copy/paste friendly)
 
 ### 1) Clone / install
@@ -40,15 +40,15 @@ Checkout requirement.txt
 
 - What to download:
 Assuming you want to train
-Download kaggle faceforensic++ dataset
+Download kaggle FaceForensics++ dataset
 
 - Where to place it:
-    2. Move real video to ~/CSC492/DeepFake-EfficientNet/tmp/real/
-    3. Move fake vidoe to ~/CSC492/DeepFake-EfficientNet/tmp/fake/
+Example paths (adjust to your setup):
+Move real videos to: <repo_root>/temp/real/
+Move fake videos to: <repo_root>/temp/fake/
 
 ### 3) How to run
 
-```bash
 0.    Make following changes to the repo
 # (venv) wu@Wu-Hung-Mao:~/CSC492/DeepFake-EfficientNet$ git diff cdddceb77758b04610dbfa7bdab9dee51d1d430d
 # diff --git a/deepfake_detector/data/transforms.py b/deepfake_detector/data/transforms.py
@@ -185,8 +185,6 @@ Download kaggle faceforensic++ dataset
     --checkpoint outputs/checkpoints/best_model.pth \
     --model efficientnet-b1
 
-```
-
 ## Output / results
 
 - What output you saw (logs, metrics, saved files):
@@ -198,7 +196,7 @@ Best model saved with val_acc: 1.0000
 
 ## Issues encountered + fixes
 
-- Issue: Need to made some changes 
+- Issue: Needed to make some changes 
 - Cause: Some packages are updated
 - Fix (steps/commands):
 See above how to run session
