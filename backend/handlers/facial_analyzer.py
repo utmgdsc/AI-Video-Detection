@@ -4,7 +4,7 @@ Facial Analyzer - detects face-based deepfakes.
 Uses XceptionNet and/or MesoNet for facial deepfake detection.
 """
 
-from backend.models import xception, mesonet
+from backend.models.wrappers import xception, mesonet
 from backend.preprocessing import image_processor
 
 

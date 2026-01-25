@@ -4,7 +4,7 @@ Audio Handler - processes audio track from video.
 Uses AASIST model for audio deepfake detection.
 """
 
-from backend.models import aasist
+from backend.models.wrappers import aasist
 from backend.preprocessing import audio_processor
 
 
