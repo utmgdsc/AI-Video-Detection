@@ -5,8 +5,8 @@
 - Problem it solves: The MesoNet Github repository provides two models, Meso-4 and MesoInception, which specialize on detecting videos with faces edited by DeepFake or Face2Face. More specifically, the models selects frames from a video, extracts the faces, and focus on features such as the eyes to determine the final classification score.
 
 - Input → output:
-images (ideally 256x256) → Fine-tuned weights for more relevance
-Directory of mp4, avi, or mov videos → Dictionary mapping video names to scores (1=real, 0=Fake)
+images (ideally 256x256) → Outputs an array of scores and expected class, which are values between 0.0 and 1.0 (1=real, 0=Fake)
+Directory of mp4, avi, or mov videos → Dictionary mapping video names to scores between 0.0 and 1.0 (1=real, 0=Fake)
 
 - Why it's relevant for AI video detection / deepfake detection:
 MesoNet is provides pretrained weights that are directly trained on a DeepFake dataset, and is specifically made to identify patterns in DeepFake-edited videos. The weights trained on Face2Face also had near-equal detection rates for DeepFake videos as well.
@@ -37,12 +37,13 @@ MesoNet uses a deep learning approach to detect patterns in edited videos, with 
 - Weaknesses:
     * Will most likely fail to classify videos that do not focus on faces.
     * Requires legacy software and libraries, many of which are no longer supported or do not support newer modules.
+    * Completely generated videos, where not only the faces but also the backgrounds were generated, may greatly affect accuracy.
 
 ## How it should be used in our project
 
 - Expected preprocessing:
     * An optional training set of images to  fine-tune the weights to be more relevant
-    * Potentially cutting the video down to a shorter length
+    * Potentially cutting the video down to a shorter length, or extracting certain frames
 - Expected input format: mp4, avi, or mov files, placed in a known directory
 - Metrics typically reported: A number from 0-1 on the model prediction of fake or real
 

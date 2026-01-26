@@ -60,8 +60,8 @@ Note: imports and some parameter names were modified in this repository to suppo
 - What to download:
     * Pretrained weights are provided on the MesoNet GitHub repository
 - Where to place it:
-    * Fine-tuning: Place images (Ideally 256x256) into test_images, sorted into df or real.
-    * Testing: Place videos into the test_videos directory.
+    * Testing Images: Place images (Ideally 256x256) into test_images, sorted into df or real.
+    * Testing Videos: Place videos into the test_videos directory.
 
 ### 3) How to run
 Ensure the virtual environment is activated (The installation guide activates the venv near the start).
@@ -79,9 +79,9 @@ python example.py
 - What output you saw (logs, metrics, saved files):
 - Add screenshots in assets/ if helpful.
 
+Running the provided example.py program provided by the MesoNet developers (with some modifications) produced this output.
+Additional test videos were also added.
 ```bash
-(mesonet) example-user\using\PyCharm\terminal> python --version
-Python 3.6.13 :: Anaconda, Inc.
 (mesonet) example-user\using\PyCharm\terminal> python example.py
 Using TensorFlow backend.
 2026-01-25 23:40:51.018077: I T:\src\github\tensorflow\tensorflow\core\platform\cpu_feature_guard.cc:140] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
@@ -102,7 +102,17 @@ Predicting  real1.mp4
 `fake1` video class prediction : 0.9310344827586207
 `real1` video class prediction : 1.0
 ```
-Note: The fake video received a score of 0.93, but was expected to be lower than 0.5. Possible causes are higher version incompatibility, or newer DeepFake videos are too sophisticated for older MesoNet models.
+Notes:
+* 4 images were provided and found by the the test_images directory. However, only one was selected and predicted. To have more images predicted, within example.py step 2, change the batch_size argument to the desired number of images to predict and produce an output similar to the following:
+```bash
+Predicted : [[0.9897475 ]
+ [0.0486937 ]
+ [0.9977016 ]
+ [0.04141179]] 
+Real class : [1. 0. 1. 0.]
+```
+* If test_images is empty of any images then example.py will not run. Steps 2 and 3 must be removed in order to predict videos.
+* The fake video received a score of 0.93, but was expected to be lower than 0.5. Possible causes are higher version incompatibility, or newer DeepFake videos are too sophisticated for older MesoNet models.
 
 ## Issues encountered + fixes
 
