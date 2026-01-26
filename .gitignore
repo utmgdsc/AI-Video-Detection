@@ -51,4 +51,4 @@ logs/
 backend/models/DeepFake-EfficientNet/
 backend/models/XceptionNet-Detector/
 backend/models/MesoNet/
-backend/models/AASIST/
+
