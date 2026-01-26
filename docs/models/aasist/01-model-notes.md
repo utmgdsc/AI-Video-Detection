@@ -2,10 +2,6 @@
 
 ## What the model does (1–3 paragraphs)
 
-- Problem it solves:
-- Input → output:
-- Why it's relevant for AI video detection / deepfake detection:
-
 AASIST (Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks) is an audio-based deepfake detection model designed to distinguish between bonafide (real) speech and spoofed or AI-generated speech. It operates directly on raw audio waveforms and learns discriminative temporal and spectral patterns that are difficult for synthetic speech systems to replicate.
 
 The model takes a waveform input and produces a binary classification output indicating whether the audio is real or spoofed. In our implementation, the forward pass returns an intermediate embedding vector along with classification logits. These logits are converted into a softmax probability, and the probability of the “spoof” class is used as the model’s final score.
@@ -65,6 +61,8 @@ AASIST is highly relevant for AI video detection because many deepfake videos re
 
 Put images in ./assets and reference them like:
 ![description](assets/<filename.png>)
+
+![aasist Architecture](assets/aasist_architecture.png)
 
 ## Open questions
 
