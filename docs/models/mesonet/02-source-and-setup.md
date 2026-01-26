@@ -23,12 +23,12 @@ List exactly what you installed (with versions if possible):
 - CUDA (if used):
 - OpenCV: 4.1.2.30
 - Other deps:
-    * Imageio
-    * FFMPEG
-    * face_recognition
-    * CMake
-    * DLib
-    * H5py
+    * Imageio 2.4.1
+    * FFMPEG 0.5.1
+    * face_recognition 1.3.0
+    * CMake 3.28.4
+    * DLib 19.22.0
+    * H5py 2.10.0
 
 ## Setup steps (copy/paste friendly)
 Due to the legacy software MesoNet relies on, Conda 25.7.0 was used to manage the virtual environment.
@@ -103,7 +103,7 @@ Predicting  real1.mp4
 `real1` video class prediction : 1.0
 ```
 Notes:
-* 4 images were provided and found by the the test_images directory. However, only one was selected and predicted. To have more images predicted, within example.py step 2, change the batch_size argument to the desired number of images to predict and produce an output similar to the following:
+* 4 images were provided and found by the the test_images directory. However, only one was selected and predicted. To have more images predicted, within example.py step 2, change the batch_size argument to the desired number of images to predict and produce an output similar to the followingZ:
 ```bash
 Predicted : [[0.9897475 ]
  [0.0486937 ]
