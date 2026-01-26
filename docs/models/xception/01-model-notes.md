@@ -45,9 +45,6 @@ XceptionNet is a CNN that consists of 36 depthwise separable convolution layers,
 
 ## Screenshots / diagrams (optional)
 
-Put images in ./assets and reference them like:
-![description](assets/<filename.png>)
-
 ## Open questions
 
 - Questions to ask in weekly meeting:

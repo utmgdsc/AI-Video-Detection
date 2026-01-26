@@ -4,7 +4,7 @@
 
 - GitHub repo link: https://github.com/i3p9/deepfake-detection-with-xception
 - Paper link: https://arxiv.org/abs/1610.02357
-- Any pretrained weights link:
+- Any pretrained weights link: Keras ImageNet pre-trained Xception weights downloaded automatically when running train_dateset.py, via keras.applications.xception. 
 - License notes (if known):
 
 ## What I verified
@@ -17,12 +17,21 @@
 
 List exactly what you installed (with versions if possible):
 
-- OS: macOS Tahoe 262
+- OS: macOS Tahoe 26.2
 - Python: 3.11.14
-- PyTorch:
+- PyTorch: Not used, Tensorflow is used
 - CUDA (if used):
-- OpenCV:
+- OpenCV: 4.11.0
 - Other deps:
+tensorflow>=2.12,<2.16
+numpy
+h5py
+pillow
+opencv-python
+mtcnn
+tqdm
+matplotlib
+scikit-learn
 
 ## Setup steps (copy/paste friendly)
 
