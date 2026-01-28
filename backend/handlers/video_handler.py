@@ -34,20 +34,20 @@ class VideoHandler:
         """
         # TODO: Implement
         # 1. Extract frames from video
-        # frames = video_processor.extract_frames(video_path)
+        frames = video_processor.extract_frames(video_path)
 
         # 2. Detect faces in frames
-        # faces = video_processor.detect_faces(frames)
+        faces = video_processor.detect_faces(frames)
 
         # 3. If faces found, run facial analyzer
-        # if faces:
-        #     facial_score = self.facial_analyzer.process(faces)
+        if faces:
+            facial_score = self.facial_analyzer.process(faces)
 
         # 4. Run image analyzer on frames
-        # image_score = self.image_analyzer.process(frames)
+        image_score = self.image_analyzer.process(frames)
 
         # 5. Combine scores
-        # combined = self._combine_scores(facial_score, image_score)
+        combined = self._combine_scores(facial_score, image_score)
 
         raise NotImplementedError("Implement process()")
 
