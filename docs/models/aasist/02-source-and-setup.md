@@ -45,6 +45,7 @@ List exactly what you installed (with versions if possible):
 ### 1) Clone / install
 
 ```bash
+
 git clone https://github.com/utmgdsc/AI-Video-Detection.git
 cd AI-Video-Detection
 
@@ -58,7 +59,8 @@ pip install torch numpy soundfile
 
 ### 2) Any downloads needed (weights/datasets)
 
-- What to download: Pretrained AASIST checkpoint (AASIST.pth)
+- What to download: Pretrained AASIST checkpoint (AASIST.pth) 
+- Link: https://github.com/clovaai/aasist/tree/main/models/weights
 - Where to place it: backend/models/AASIST/aasist_detector/weights/AASIST.pth
 
 

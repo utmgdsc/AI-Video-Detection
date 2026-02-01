@@ -59,9 +59,6 @@ AASIST is highly relevant for AI video detection because many deepfake videos re
 
 ## Screenshots / diagrams (optional)
 
-Put images in ./assets and reference them like:
-![description](assets/<filename.png>)
-
 ![aasist Architecture](assets/aasist_architecture.png)
 
 ## Open questions
