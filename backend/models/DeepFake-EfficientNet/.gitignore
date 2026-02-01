@@ -132,3 +132,5 @@ temp/
 outputs/
 ff_extracted/
 all_model_test_output/
+easyAnimate_leave_out_outputs/
+closed_source_output/
