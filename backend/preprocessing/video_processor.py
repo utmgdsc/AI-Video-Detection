@@ -6,6 +6,7 @@ Uses OpenCV for frame extraction and face detection.
 
 import cv2
 import numpy as np
+from PIL import Image
 
 
 def extract_frames(video_path, sample_rate=1):
@@ -14,6 +15,9 @@ def extract_frames(video_path, sample_rate=1):
 
     Args:
         video_path: Path to video file
+        mtcnn: mtcnn is the model that extract faces
+        device: "cuda" or "cpu"
+        batch_size: size of each batch
         sample_rate: Extract every Nth frame (1 = all frames)
 
     Returns:
@@ -23,20 +27,23 @@ def extract_frames(video_path, sample_rate=1):
     cap = cv2.VideoCapture(video_path)
 
     frame_count = 0
+    # output_dir = "frame_extracted/"
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
         if frame_count % sample_rate == 0:
-            frames.append(frame)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frames.append(frame_rgb)
+
         frame_count += 1
 
     cap.release()
     return frames
 
 
-def detect_faces(frames):
+def detect_faces(frames, mtcnn, batch_size):
     """
     Detect and crop faces from frames.
 
@@ -51,8 +58,35 @@ def detect_faces(frames):
     # - cv2.CascadeClassifier (simple, fast)
     # - dlib (more accurate)
     # - MTCNN (deep learning based)
+    batch = []
+    batch_idx = 0
+    frame_idx = 0
+    faces = []
+    while frame_idx < len(frames):
+        batch.append(frames[frame_idx])
+        frame_idx += 1
+        batch_idx += 1
+        # Process batch
+        if batch_idx >= batch_size or frame_idx == len(frames) - 1:
+            pil_batch = [Image.fromarray(f) for f in batch]
 
-    raise NotImplementedError("Implement detect_faces()")
+            batch_result = mtcnn(pil_batch)
+            if batch_result is not None:
+                for result in batch_result:
+                    # no face
+                    if result is None:
+                        continue
+
+                    # multiple faces in a frame
+                    if result.ndim == 4:
+                        for face in result:
+                            faces.append(face)
+                    else:
+                        # one face in a frame
+                        faces.append(result)
+            batch_idx = 0
+            batch = []
+    return faces
 
 
 def separate_audio(video_path, output_path):
