@@ -125,12 +125,12 @@ def main():
         required=True,
         help="Input directory containing videos/images",
     )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        required=True,
-        help="Output directory for extracted faces",
-    )
+    # parser.add_argument(
+    #     "--output-dir",
+    #     type=str,
+    #     required=True,
+    #     help="Output directory for extracted faces",
+    # )
 
     # Processing options
     parser.add_argument(
