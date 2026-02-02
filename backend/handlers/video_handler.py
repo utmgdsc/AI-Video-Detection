@@ -6,6 +6,7 @@ Based on content type, routes to:
 - Image Analyzer (for general image manipulation)
 """
 
+import sys
 from backend.handlers.facial_analyzer import FacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
@@ -17,7 +18,7 @@ class VideoHandler:
         self.facial_analyzer = FacialAnalyzer()
         self.image_analyzer = ImageAnalyzer()
 
-    def process(self, video_path, mtcnn, batch_size, frame_skip):
+    def process(self, video_path, mtcnn, batch_size, sample_rate):
         """
         Process video file and return deepfake scores.
 
@@ -34,12 +35,14 @@ class VideoHandler:
         """
         # TODO: Implement
         # 1. Extract frames from video
-        frames = video_processor.extract_frames(video_path, frame_skip)
-        print("FRAMES EXTRACTED!!!\n")
+        frames = video_processor.extract_frames(video_path, sample_rate)
+        print("FRAMES EXTRACTED!!!")
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
-        print("FACES DETECTED!!!\n")
-
+        if faces:
+            print("FACES DETECTED!!!")
+        print("BYE BYE!!!")
+        sys.exit()
         # 3. If faces found, run facial analyzer
         if faces:
             facial_score = self.facial_analyzer.process(faces)
