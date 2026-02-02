@@ -17,7 +17,7 @@ class VideoHandler:
         self.facial_analyzer = FacialAnalyzer()
         self.image_analyzer = ImageAnalyzer()
 
-    def process(self, video_path):
+    def process(self, video_path, mtcnn, batch_size, frame_skip):
         """
         Process video file and return deepfake scores.
 
@@ -34,10 +34,11 @@ class VideoHandler:
         """
         # TODO: Implement
         # 1. Extract frames from video
-        frames = video_processor.extract_frames(video_path)
-
+        frames = video_processor.extract_frames(video_path, frame_skip)
+        print("FRAMES EXTRACTED!!!\n")
         # 2. Detect faces in frames
-        faces = video_processor.detect_faces(frames)
+        faces = video_processor.detect_faces(frames, mtcnn, batch_size)
+        print("FACES DETECTED!!!\n")
 
         # 3. If faces found, run facial analyzer
         if faces:
