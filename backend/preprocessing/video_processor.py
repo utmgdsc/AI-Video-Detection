@@ -67,7 +67,7 @@ def detect_faces(frames, mtcnn, batch_size):
         frame_idx += 1
         batch_idx += 1
         # Process batch
-        if batch_idx >= batch_size or frame_idx == len(frames) - 1:
+        if batch_idx >= batch_size or frame_idx == len(frames):
             pil_batch = [Image.fromarray(f) for f in batch]
 
             batch_result = mtcnn(pil_batch)

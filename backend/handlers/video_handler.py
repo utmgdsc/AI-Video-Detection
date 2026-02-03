@@ -42,7 +42,7 @@ class VideoHandler:
         if faces:
             print("FACES DETECTED!!!")
         print("BYE BYE!!!")
-        sys.exit()
+
         # 3. If faces found, run facial analyzer
         if faces:
             facial_score = self.facial_analyzer.process(faces)
