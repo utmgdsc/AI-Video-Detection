@@ -13,6 +13,7 @@ Pillow>=10.0.0
 # Audio processing
 librosa>=0.10.0
 torchaudio>=2.0.0
+soundfile>=0.12.1
 
 # Utilities
 numpy>=1.24.0
@@ -24,3 +25,6 @@ moviepy>=1.0.3
 # Optional: for better face detection
 # dlib>=19.24.0
 # facenet-pytorch>=2.5.0
+
+#Optional: for plotting accuracy
+matplotlib>=3.7.0
