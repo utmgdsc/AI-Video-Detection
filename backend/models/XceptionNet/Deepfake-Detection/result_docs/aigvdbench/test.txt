@@ -1,0 +1,3 @@
+(xception_env) gdgteam1@lisa:~/AI-Video-Detection/backend/models/XceptionNet/Deepfake-Detection$ python test_CNN.py -bz 64 -tl data_list/test.txt -mp output/xception/best.pkl 
+Using dropout 0.5
+Test Acc: 0.9505
