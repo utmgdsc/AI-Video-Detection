@@ -25,7 +25,7 @@ from pipeline import *
 WEIGHT_DIR = "./weights"
 # PATH is the file path from the current directory to the test set, not including class subdirectories
 SET_PATH = '../../dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/'
-# SET_PATH = '../../dataset/FaceForensics++ Dataset/ff-c23/versions/1/FaceForensics++_C23/'
+# SET_PATH = '../../dataset/FaceForensics++ Dataset'
 
 # Indexes of argument from command line
 ARG_WEIGHT = 1
