@@ -109,11 +109,14 @@ The original MesoNet preprocessing was run on the AIGVDBench standard split test
 52.08% for AIGVDBench
 61.65% for DeepFakes
 49.75% for Face2Face
+(Original weights can be found at: https://github.com/DariusAf/MesoNet/tree/master/test_images/df)
 
 From these tests, MesoNet has been labelling roughly 80% of all AIGVDBench videos as real, and nearly 90% of FaceForensics++.
 The AIGVDBench accuracy was not too surprising, as MesoNet was never trained on these kinds of video generation.
 
 The Higher DeepFakes accuracy is slightly lower than expected, as the pretrained weight specialized for DeepFake and had been originally tested FaceForensics++. However, other papers have also reported the large drop in MesoNet's accuracy since 2018, as DeepFake videos become more sophisticated.
+(Other paper referenced https://www.sciencedirect.com/science/article/pii/S1877050925013882, DOI: 10.1016/j.procs.2025.04.286)
+
 The most surprising result was for Face2Face, which had a true negative rate of 2.7%, wheras the others had at least 18.55%. The original authors reported that the DeepFake and Face2Face weights were able to perform well on each other's datasets.
 
 For all of the above tests, MesoNet had extracted roughly 30 frames from each video. However, when extracting 10 frames, MesoNet reported nearly identical results for DeepFake and Face2Face, even a slight 0.3% increase in accuracy as more videos were labelled fake, moreso in for fake videos than real.
