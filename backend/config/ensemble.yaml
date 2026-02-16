@@ -1,0 +1,44 @@
+# Ensemble Configuration
+device: "cuda" # 'cuda' or 'cpu'
+ensemble_method: "weighted_average" # Options: 'mean', 'weighted_average', 'max_voting'
+output_dir: "./outputs/ensemble_results/"
+batch_size: 60
+frame_skip: 30
+
+datasets:
+  AIGVDBench_dataset:
+    dataset_path: "backend/dataset/AIGVDBench/AIGVDBench/"
+    test_video_path: "backend/dataset/AIGVDBench/AIGVDBench/Real/videos/_6E6r_nfgMU_40_113to214.mp4"
+  faceforensic:
+    dataset_path:
+    example_video_path:
+  kaggle:
+    dataset_path:
+    example_video_path:
+  LAV-DF:
+    dataset_path:
+    example_video_path:
+
+# Individual Model Configurations
+models:
+  # EfficientNet config for the ensemble
+  efficientnet_b1:
+    active: true
+    architecture: "efficientnet_b1"
+    weights_path: "./weights/efficientnet_b4_best.pth"
+    num_classes: 2 # Real or Fake
+    image_size: 240
+    ensemble_weight: 0.5
+    margin: 50
+    min_face_size: 100
+    threshold: 0.5
+
+    # preprocessing:
+    #   resize: 380
+    #   normalization: "imagenet" # Standard ImageNet mean/std
+
+  xceptionnet:
+
+  mesonet:
+
+  aasist:
