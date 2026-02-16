@@ -16,7 +16,7 @@ from backend.models.DeepFake_EfficientNet.deepfake_detector.models.efficientnet 
 )
 
 # Add the full repo to path (update path if repo name is different)
-REPO_PATH = os.path.join(os.path.dirname(__file__), "../DeepFake-EfficientNet")
+REPO_PATH = os.path.join(os.path.dirname(__file__), "../DeepFake_EfficientNet")
 if os.path.exists(REPO_PATH):
     sys.path.insert(0, REPO_PATH)
 else:
@@ -36,8 +36,8 @@ def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
     Returns:
         model: Loaded PyTorch model ready for inference.
     """
-    efficient_net_model = EfficientNetModel()
-    checkpoint = torch.load(weights_path, map_location=device, weights_path=True)
+    efficient_net_model = EfficientNetModel(model_name=model_name)
+    checkpoint = torch.load(weights_path, map_location=device)
 
     if "model_state_dict" in checkpoint:
         efficient_net_model.load_state_dict(checkpoint["model_state_dict"])

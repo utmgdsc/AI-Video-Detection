@@ -1,17 +1,17 @@
 # Ensemble Configuration
-device: "cuda" # 'cuda' or 'cpu'
+device: "cuda" # cuda or cpu
 ensemble_method: "weighted_average" # Options: 'mean', 'weighted_average', 'max_voting'
 output_dir: "./outputs/ensemble_results/"
 batch_size: 60
 frame_skip: 30
 
 datasets:
-  AIGVDBench_dataset:
-    dataset_path: "backend/dataset/AIGVDBench/AIGVDBench/"
-    test_video_path: "backend/dataset/AIGVDBench/AIGVDBench/Real/videos/_6E6r_nfgMU_40_113to214.mp4"
-  faceforensic:
+  ASVspoof2019_LA:
     dataset_path:
     example_video_path:
+  faceforensic:
+    dataset_path: "/home/gdgteam1/AI-Video-Detection/backend/dataset/FaceForensics++"
+    example_video_path: "/home/gdgteam1/AI-Video-Detection/backend/dataset/FaceForensics++/original/002.mp4"
   kaggle:
     dataset_path:
     example_video_path:
@@ -25,7 +25,7 @@ models:
   efficientnet_b1:
     active: true
     architecture: "efficientnet_b1"
-    weights_path: "./weights/efficientnet_b4_best.pth"
+    weights_path: "/home/gdgteam1/AI-Video-Detection/backend/models/DeepFake_EfficientNet/outputs/checkpoints/best_model.pth"
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5

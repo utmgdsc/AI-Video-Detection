@@ -111,11 +111,11 @@ class DeepfakeDetector:
 
 def main():
     """Example usage."""
-    import sys
+    # import sys
 
-    if len(sys.argv) < 2:
-        print("Usage: python -m backend.main")
-        sys.exit(1)
+    # if len(sys.argv) < 2:
+    #     print("Usage: python -m backend.main")
+    #     sys.exit(1)
 
     # parser = argparse.ArgumentParser(
     #     description="Extract faces from videos and images using MTCNN",
@@ -194,7 +194,7 @@ def main():
         keep_all=True,
     )
 
-    video_path = cfg["datasets"]["AIGVDBench_dataset"]["test_video_path"]
+    video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
     detector = DeepfakeDetector(config=cfg)
     result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
 

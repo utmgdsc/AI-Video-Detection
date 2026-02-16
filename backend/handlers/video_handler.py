@@ -16,12 +16,12 @@ class VideoHandler:
     def __init__(self):
         """Initialize video handler with analyzers."""
         # change to XceptionNet facial analyzer
-        self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
+        # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet"
         )
         # change to mesonet facial analyzer
-        self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
+        # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
@@ -42,7 +42,8 @@ class VideoHandler:
         # TODO: Implement
         # 1. Extract frames from video
         frames = video_processor.extract_frames(video_path, sample_rate)
-        print("FRAMES EXTRACTED!!!")
+        if frames != []:
+            print("FRAMES EXTRACTED!!!")
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
         if faces:
