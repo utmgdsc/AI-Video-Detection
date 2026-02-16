@@ -1,3 +1,13 @@
+'''
+Uses the pipeline provided by the MesoNet Authors to extract faces directly from videos and make predictions
+on the authenticity of the videos. Creates a CSV file storing all the predictions made.
+
+Issue: the pipeline provided has encountered a certain issue and fail to make a prediction for certain videos.
+The current most likely cause is the outdated frames extraction count. Back in 2018, the original authors used
+imageio's reader.get_meta_data()['nframes'] to count the total number of frames in a video. However, the more
+recent way to do this is to use imageio.v3's improps to count the number of frames.
+'''
+
 import csv
 import argparse
 from pathlib import Path
@@ -12,6 +22,11 @@ from classifiers import *
 from pipeline import *
 
 def get_cmd_args():
+    '''
+    Creates and argument parser for running the script through the command-line.
+
+    returns the arguments as argparse.ArgumentParser.parse_args()
+    '''
     PARSER_DESC = "Predict whether videos of the same class are real or fake. Uses " \
         "the original face-extractor pipeline provided by the MesoNet authors."
     parser = argparse.ArgumentParser(
@@ -28,6 +43,17 @@ def get_cmd_args():
     return parser.parse_args()
 
 def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_count = 30):
+    '''
+    Using a slightly modified pipeline provided by the MesoNet authors, Make predictions over a
+    directory of videos with the same class.
+    Returns a 2D list with list 0 as the headers of a CSV file, and the remaining rows as values
+    
+    :param classifier: the model making predictions, loaded with a weight
+    :param dirname: the class name of the videos
+    :param act_class: the value assigned to the class (0.0 is fake, 1.0 is real)
+    :param dir: the path to the dataset directory
+    :param frame_subsample_count: The number of frames to extract from each video
+    '''
     labels = ['actual_class', 'predicted_class', 'score', 'type', 'video_name']
     csv_arrs = [labels]
 
@@ -66,6 +92,15 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
     return csv_arrs
 
 def create_CSV(data, weight_name, type):
+    '''
+    Creates a CSV file for a 2D list.
+    Creates a directory 'predictions' if it does not already exist.
+    
+    The CSV file will be written to the file:
+    f'{weight_name}-predictions-{type}.csv'
+
+    :param data: A 2D list of data with the first row being the labels of the CSV
+    '''
     output_dir = Path('predictions')
     output_dir.mkdir(exist_ok=True) 
     output_path = output_dir / f'{weight_name}-predictions-{type}.csv'
