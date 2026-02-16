@@ -11,17 +11,21 @@ DeepFake-EfficientNet repository added by the team member.
 import sys
 import os
 import torch
+
+# 1. FIX PATH FIRST
+# Get the path to: backend/models/DeepFake_EfficientNet
+project_root = os.path.dirname(__file__)
+deepfake_path = os.path.abspath(os.path.join(project_root, "../DeepFake_EfficientNet"))
+
+# Add it to system path so internal imports like "from deepfake_detector..." work
+if deepfake_path not in sys.path:
+    sys.path.insert(0, deepfake_path)
+
+# 2. THEN IMPORT MODEL
+# Now Python can find the internal dependencies
 from backend.models.DeepFake_EfficientNet.deepfake_detector.models.efficientnet import (
     DeepFakeDetector as EfficientNetModel,
 )
-
-# Add the full repo to path (update path if repo name is different)
-REPO_PATH = os.path.join(os.path.dirname(__file__), "../DeepFake_EfficientNet")
-if os.path.exists(REPO_PATH):
-    sys.path.insert(0, REPO_PATH)
-else:
-    print(f"Warning: DeepFake-EfficientNet repo not found at {REPO_PATH}")
-    print("Add the full repo to backend/models/ first (see backend/models/README.md)")
 
 
 def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
