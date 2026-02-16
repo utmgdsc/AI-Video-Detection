@@ -15,7 +15,7 @@ import traceback
 from os import listdir
 from os.path import isfile, join
 import math
-from math import floor 
+from math import floor
 
 import numpy as np
 from classifiers import *
@@ -82,9 +82,13 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
 
             curr_row = [act_class, curr_pred, score, dir, vid] # Format of CSV rows
             csv_arrs.append(curr_row)
-        except Exception as error:
-            print(f"Error on video {vid}:\n{error}")
+        except RuntimeError as error:
+            print(f"Error on video {vid}:\n")
             traceback.print_exc()
+            print("\nAuthor note: If the error is 'RuntimeError: Frame is 0 bytes, but expected [XXXX]', then this " \
+            "error is likely caused by the outdated original provided MesoNet pipeline.py.\n" \
+            "The original pipeline uses imageio to read the metadata 'nframes', which is legacy code. " \
+            "The pipeline tries to read a nonexistent frame that is out of bounds of the video's total frames.")
 
             curr_row = [act_class, -1.0, -1.0, dir, vid]
             csv_arrs.append(curr_row)
