@@ -111,68 +111,6 @@ class DeepfakeDetector:
 
 def main():
     """Example usage."""
-    # import sys
-
-    # if len(sys.argv) < 2:
-    #     print("Usage: python -m backend.main")
-    #     sys.exit(1)
-
-    # parser = argparse.ArgumentParser(
-    #     description="Extract faces from videos and images using MTCNN",
-    #     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    # )
-
-    # Input/Output
-    # parser.add_argument(
-    #     "--input-dir",
-    #     type=str,
-    #     required=True,
-    #     help="Input directory containing videos/images",
-    # )
-
-    # parser.add_argument(
-    #     "--output-dir",
-    #     type=str,
-    #     required=True,
-    #     help="Output directory for extracted faces",
-    # )
-
-    # Processing options
-    # parser.add_argument(
-    #     "--mode",
-    #     type=str,
-    #     choices=["video", "image"],
-    #     default="video",
-    #     help="Processing mode",
-    # )
-    # parser.add_argument(
-    #     "--batch-size", type=int, default=60, help="Batch size for processing"
-    # )
-    # parser.add_argument(
-    #     "--frame-skip",
-    #     type=int,
-    #     default=30,
-    #     help="Process every Nth frame (video only)",
-    # )
-
-    # MTCNN parameters
-    # parser.add_argument("--stride", type=int, default=1, help="Detection stride")
-    # parser.add_argument(
-    #     "--margin", type=int, default=50, help="Margin around detected face"
-    # )
-    # parser.add_argument(
-    #     "--min-face-size", type=int, default=100, help="Minimum face size to detect"
-    # )
-
-    # Device
-    # parser.add_argument(
-    #     "--device",
-    #     type=str,
-    #     default="cuda",
-    #     choices=["cuda", "cpu"],
-    #     help="Device to use",
-    # )
-    # args = parser.parse_args()
 
     config_path = "/home/gdgteam1/AI-Video-Detection/backend/config/ensemble.yaml"
     with open(config_path, "r") as file:
@@ -181,9 +119,9 @@ def main():
     device = cfg["device"]
     margin = cfg["models"]["efficientnet_b1"]["margin"]
     min_face_size = cfg["models"]["efficientnet_b1"]["min_face_size"]
-    # if device == "cuda" and not torch.cuda.is_available():
-    #     print("CUDA not available, using CPU")
-    #     device = "cpu"
+    if device == "cuda" and not torch.cuda.is_available():
+        print("CUDA not available, using CPU")
+        device = "cpu"
 
     # Initialize MTCNN
     print("Initializing MTCNN...")

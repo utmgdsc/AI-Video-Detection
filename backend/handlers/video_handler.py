@@ -55,7 +55,7 @@ class VideoHandler:
                 faces, models_cfg["efficientnet_b1"], device=device
             )
             print("facial_score is", facial_score)
-        sys.exit()
+
         # 4. Run image analyzer on frames
         image_score = self.image_analyzer.process(frames)
 
