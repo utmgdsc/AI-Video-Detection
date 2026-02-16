@@ -27,16 +27,30 @@ Note: This file results uses a modified version of the preprocessing pipeline pr
 3. Create a generator with the extracted faces, which will resize and help handle predictions
 
 ## Code Changes
-- Added `backend/models/Mesonet/activate_conda_env.sh`
-- Added `backend/models/Mesonet/make-video-predictions.py`
-- Added `backend/models/Mesonet/predict_standard_predictions.sh`
+- Added `backend/models/MesoNet/activate_conda_env.sh`
+- Added `backend/models/MesoNet/make-video-predictions.py`
+- Added `backend/models/MesoNet/predict_standard_predictions.sh`
 - Modified `02-source-and-setup.md`
 
 ## How to Run
+First the Conda environment for this model must be activated. The environment is local to the terminal that is executing the scripts. If using the Anaconda Prompt terminal, or if Conda is automatically intiallized, then the environment can activated using the following:
 ```bash
-# Ensure that the mesonet Conda environment is activated, or run the following line
+# Conda is initialized if the '(base)' appears before the command prompt, for example:
+# (base) username@computer:~$
+
+conda activate mesonet
+# Note: 'mesonet' is the name of the environment created in the setup guide, and may vary if you named the environmnent something else. You can list your Conda environments with the following line:
+conda info --envs
+``` 
+If you are not using the Anaconda Prompt, then an activation script is provided. This script assumes that the Conda environment has been installed to Miniconda default path for Linux (~/miniconda3/bin/conda), as well as activates the environment if its name is 'mesonet'.
+```bash
 . activate_conda_env.sh
 
+# In the command prompt, '(base)' should now be replaced with the name of the environment. For example:
+# (mesonet) username@computer:~$
+```
+With the Conda environment activated, the legacy Python 3.6 scripts can now be run.
+```bash
 # For the original author's provided pipeline, place videos in the 'test_videos' directory and run example.py
 # See 02-source-and-setup.md for MesoNet
 
