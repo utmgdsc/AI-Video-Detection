@@ -4,6 +4,8 @@ ensemble_method: "weighted_average" # Options: 'mean', 'weighted_average', 'max_
 output_dir: "./outputs/ensemble_results/"
 batch_size: 60
 frame_skip: 30
+margin: 50
+min_face_size: 100
 
 datasets:
   ASVspoof2019_LA:
@@ -29,8 +31,6 @@ models:
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5
-    margin: 50
-    min_face_size: 100
     threshold: 0.5
 
     # preprocessing:

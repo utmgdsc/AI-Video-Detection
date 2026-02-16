@@ -62,7 +62,8 @@ class FacialAnalyzer:
 
 
 class EfficientNetFacialAnalyzer(FacialAnalyzer):
-    def __init__(self, model_name, weights_path=None):
+
+    def __init__(self, model_name, device, weights_path=None):
         """
         Initialize facial analyzer.
 
@@ -71,6 +72,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             weights_path: Path to pretrained weights
         """
         super().__init__(model_name, weights_path)
+        self.device = device
 
     def predict_single(self, model, image_tensor, device):
         """Run prediction on a single image."""
@@ -86,7 +88,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
 
         return probs.cpu().numpy()[0]
 
-    def process(self, faces, model_cfg, device):
+    def process(self, faces, model_cfg):
         """
         Analyze faces for deepfake detection.
 
@@ -101,7 +103,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             }
         """
         if self.model is None:
-            self.load_model(model_cfg["weights_path"], device)
+            self.load_model(model_cfg["weights_path"], self.device)
 
         # Prepare transform
         image_size = model_cfg["image_size"]
@@ -115,7 +117,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
                     face = face.permute(1, 2, 0).cpu().numpy()
                 transformed = transform(image=face)
                 image_tensor = transformed["image"]
-                probs = self.predict_single(self.model, image_tensor, device)
+                probs = self.predict_single(self.model, image_tensor, self.device)
 
                 fake_prob = probs[0]
                 real_prob = probs[1]
@@ -131,7 +133,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
                     }
                 )
             except Exception as e:
-                logger.warning("Cannot process face ", idx)
+                logger.warning(f"Cannot process face {idx}: {e}")
                 continue
 
         if len(face_pred_result) == 0:

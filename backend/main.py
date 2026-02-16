@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class DeepfakeDetector:
     """Main orchestrator for deepfake detection pipeline."""
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, device="cuda"):
         """
         Initialize detector with handlers.
 
@@ -48,7 +48,7 @@ class DeepfakeDetector:
         self.audio_handler = AudioHandler(
             weights_path=self.config.get("aasist_weights")
         )
-        self.video_handler = VideoHandler()
+        self.video_handler = VideoHandler(device)
 
     def analyze(self, video_path, mtcnn, batch_size, frame_skip):
         """
@@ -128,7 +128,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # # Input/Output
+    # Input
     parser.add_argument(
         "--input-dir",
         type=str,
@@ -136,15 +136,20 @@ def main():
         help="Input directory containing videos/images",
     )
 
+    parser.add_argument(
+        "--config", type=str, required=False, default="./backend/config/ensemble.yaml"
+    )
+
     args = parser.parse_args()
 
-    config_path = "/home/gdgteam1/AI-Video-Detection/backend/config/ensemble.yaml"
+    config_path = args.config
+
     with open(config_path, "r") as file:
         cfg = yaml.safe_load(file)
 
     device = cfg["device"]
-    margin = cfg["models"]["efficientnet_b1"]["margin"]
-    min_face_size = cfg["models"]["efficientnet_b1"]["min_face_size"]
+    margin = cfg["margin"]
+    min_face_size = cfg["min_face_size"]
     if device == "cuda" and not torch.cuda.is_available():
         logger.warning("CUDA not available, using CPU")
         device = "cpu"
@@ -163,7 +168,7 @@ def main():
     else:
         video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
 
-    detector = DeepfakeDetector(config=cfg)
+    detector = DeepfakeDetector(config=cfg, device=device)
     result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
 
     logger.info(f"Is Fake: {result['is_fake']}")

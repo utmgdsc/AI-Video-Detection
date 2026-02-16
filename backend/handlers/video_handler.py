@@ -15,12 +15,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 class VideoHandler:
-    def __init__(self):
+
+    def __init__(self, device):
         """Initialize video handler with analyzers."""
         # TODO: Add xceptionnet facial analyzer
         # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
-            model_name="EfficientNet"
+            model_name="EfficientNet", device=device
         )
         # TODO: Add mesonet facial analyzer
         # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
@@ -54,7 +55,7 @@ class VideoHandler:
         # 3. If faces found, run facial analyzer
         if faces:
             facial_score = self.efficientnet_facial_analyzer.process(
-                faces, models_cfg["efficientnet_b1"], device=device
+                faces, models_cfg["efficientnet_b1"]
             )
             logger.info(f"facial_score: {facial_score['score']}")
 
