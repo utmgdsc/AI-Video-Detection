@@ -1,66 +1,36 @@
-'''
-Generates a CSV file for the predictions on a given directory of videos.
-Note that the predictions are made using the video preprocessing provided by the original MesoNet repository.
-
-CSV File labels:
-1.0 is the real class
-0.0 is the fake class
--1.0 is a generic error
--2.0 is no face were detected
-
-Sample Bash commands:
-# Use default path
-python3 make-video-predictions.py Meso4_DF.h5 real 1.0
-# Use specified path
-python3 make-video-predictions.py Meso4_DF.h5 real 1.0 ../../dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/
-'''
 import csv
-import sys
+import argparse
+from pathlib import Path
+import traceback
+from os import listdir
+from os.path import isfile, join
 import math
+from math import floor 
 
 import numpy as np
 from classifiers import *
 from pipeline import *
 
-WEIGHT_DIR = "./weights"
-# PATH is the file path from the current directory to the test set, not including class subdirectories
-SET_PATH = '../../dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/'
-# SET_PATH = '../../dataset/FaceForensics++ Dataset'
+def get_cmd_args():
+    PARSER_DESC = "Predict whether videos of the same class are real or fake. Uses " \
+        "the original face-extractor pipeline provided by the MesoNet authors."
+    parser = argparse.ArgumentParser(
+        description=PARSER_DESC)
+    parser.add_argument("weight",
+                        help="Path to a valid Meso4 weight, typically .h5 file.",
+                        type=Path)
+    parser.add_argument("class",
+                        help="A value denoting the classification of the directory (0.0 for fake or 1.0 for real).",
+                        type=float)
+    parser.add_argument("path",
+                        help="Path to the dataset directory, containing videos (mp4, avi, mov).",
+                        type=Path)
+    return parser.parse_args()
 
-# Indexes of argument from command line
-ARG_WEIGHT = 1
-ARG_DIR = 2
-ARG_CLASS = 3
-ARG_NEW_PATH = 4
+def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_count = 30):
+    labels = ['actual_class', 'predicted_class', 'score', 'type', 'video_name']
+    csv_arrs = [labels]
 
-if len(sys.argv) == 4 or len(sys.argv) == 5:
-    weight_name = sys.argv[ARG_WEIGHT]
-    print(f"Weight file: {weight_name}")
-    set_dir = sys.argv[ARG_DIR]
-    print(f"Video directory: {set_dir}")
-    act_class = float(sys.argv[ARG_CLASS])
-    print(f"Class: {act_class}")
-    if len(sys.argv) == 5:
-        SET_PATH = sys.argv[ARG_NEW_PATH]
-        print(f"New path to video directory: {SET_PATH}")
-else:
-    print(f"Error: Unexpected arguments.")
-    print(f"Expected: weight file, video directory, class of directory (0.0 for fake or 1.0 for real)")
-    print(f"Weight must be in {WEIGHT_DIR}.")
-    print(f"Directory must be in {SET_PATH} or in specified directory.")
-    sys.exit(2)
-
-# Load the model and its pretrained weights
-classifier = Meso4()
-classifier.load(join(WEIGHT_DIR, weight_name))
-
-# CSV Data formatting
-labels = ['actual_class', 'predicted_class', 'score', 'type', 'video_name']
-data = [labels]
-
-# Prediction for a video dataset
-
-def CSV_compute_accuracy(classifier, dirname, frame_subsample_count = 30, output = data):
     filenames = [f for f in listdir(dirname) if isfile(join(dirname, f)) and ((f[-4:] == '.mp4') or (f[-4:] == '.avi') or (f[-4:] == '.mov'))]
     total = len(filenames)
     for index, vid in enumerate(filenames):
@@ -84,23 +54,46 @@ def CSV_compute_accuracy(classifier, dirname, frame_subsample_count = 30, output
             else:
                 curr_pred = 0.0
 
-            curr_row = [act_class, curr_pred, score, set_dir, vid] # Format of CSV rows
-            output.append(curr_row)
+            curr_row = [act_class, curr_pred, score, dir, vid] # Format of CSV rows
+            csv_arrs.append(curr_row)
         except Exception as error:
             print(f"Error on video {vid}:\n{error}")
-            curr_row = [act_class, -1.0, -1.0, set_dir, vid]
-            output.append(curr_row)
+            traceback.print_exc()
+
+            curr_row = [act_class, -1.0, -1.0, dir, vid]
+            csv_arrs.append(curr_row)
     print(f"All videos predicted")
-    return output
+    return csv_arrs
 
-final_data = CSV_compute_accuracy(classifier, join(SET_PATH, set_dir))
+def create_CSV(data, weight_name, type):
+    output_dir = Path('predictions')
+    output_dir.mkdir(exist_ok=True) 
+    output_path = output_dir / f'{weight_name}-predictions-{type}.csv'
+    # Export to CSV
+    with open(output_path, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerows(data)
 
-print(f"Now writing to CSV")
+    print(f"CSV has been completely written.")
+    print(f"Script has finished all tasks and ended.")
 
-# Export to CSV
-with open(f'predictions/{weight_name}-predictions-{set_dir}.csv', 'w', newline='') as csvfile:
-    csv_writer = csv.writer(csvfile, delimiter=',')
-    csv_writer.writerows(final_data)
+if __name__ == "__main__":
+    args = get_cmd_args()
 
-print(f"CSV has been completely written.")
-print(f"Script has finished all tasks and ended.")
+    # Extract arguments and other required variables
+    weight_path = args.weight
+    act_class = getattr(args, "class")
+    dir_path = args.path
+    weight_name = weight_path.stem
+    set_dir = dir_path.name
+
+    # Load the model and its pretrained weights
+    print("Loading weight")
+    classifier = Meso4()
+    classifier.load(weight_path)
+
+    # CSV Data formatting
+    print("Beginning computations")
+    final_data = CSV_compute_accuracy(classifier, str(dir_path), act_class, set_dir)
+    print(f"Now writing to CSV")
+    create_CSV(final_data, weight_name, set_dir)
