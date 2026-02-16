@@ -11,6 +11,7 @@ Flow:
 
 import os
 import tempfile
+import sys
 from facenet_pytorch import MTCNN
 import torch
 import argparse
@@ -20,6 +21,18 @@ from backend.handlers.audio_handler import AudioHandler
 from backend.handlers.video_handler import VideoHandler
 from backend.preprocessing.video_processor import separate_audio
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("result.log"),
+        logging.StreamHandler(),
+    ],
+)
+
+logger = logging.getLogger(__name__)
 
 class DeepfakeDetector:
     """Main orchestrator for deepfake detection pipeline."""
@@ -110,7 +123,20 @@ class DeepfakeDetector:
 
 
 def main():
-    """Example usage."""
+    parser = argparse.ArgumentParser(
+        description="Extract faces from videos and images using MTCNN",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    # # Input/Output
+    parser.add_argument(
+        "--input-dir",
+        type=str,
+        required=False,
+        help="Input directory containing videos/images",
+    )
+
+    args = parser.parse_args()
 
     config_path = "/home/gdgteam1/AI-Video-Detection/backend/config/ensemble.yaml"
     with open(config_path, "r") as file:
@@ -120,11 +146,11 @@ def main():
     margin = cfg["models"]["efficientnet_b1"]["margin"]
     min_face_size = cfg["models"]["efficientnet_b1"]["min_face_size"]
     if device == "cuda" and not torch.cuda.is_available():
-        print("CUDA not available, using CPU")
+        logger.warning("CUDA not available, using CPU")
         device = "cpu"
 
     # Initialize MTCNN
-    print("Initializing MTCNN...")
+    logger.info("Initializing MTCNN...")
     mtcnn = MTCNN(
         margin=margin,
         min_face_size=min_face_size,
@@ -132,15 +158,19 @@ def main():
         keep_all=True,
     )
 
-    video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
+    if args.input_dir:
+        video_path = args.input_dir
+    else:
+        video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
+
     detector = DeepfakeDetector(config=cfg)
     result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
 
-    print(f"Is Fake: {result['is_fake']}")
-    print(f"Confidence: {result['confidence']:.2%}")
-    print(f"Audio Score: {result['audio_score']}")
-    print(f"Video Score: {result['video_score']}")
-    print(f"Details: {result['details']}")
+    logger.info(f"Is Fake: {result['is_fake']}")
+    logger.info(f"Confidence: {result['confidence']:.2%}")
+    logger.info(f"Audio Score: {result['audio_score']}")
+    logger.info(f"Video Score: {result['video_score']}")
+    logger.info(f"Details: {result['details']}")
 
 
 if __name__ == "__main__":

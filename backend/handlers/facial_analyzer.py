@@ -14,6 +14,9 @@ from backend.models.DeepFake_EfficientNet.deepfake_detector.data import (
     get_val_transforms,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class FacialAnalyzer:
     def __init__(self, model_name, weights_path=None):
@@ -25,8 +28,7 @@ class FacialAnalyzer:
             weights_path: Path to pretrained weights
         """
         self.model_name = model_name
-        # maybe we don't need this
-        # self.weights_path = weights_path
+        self.weights_path = weights_path
         self.model = None
 
     def load_model(self, weights_path, device):
@@ -68,14 +70,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             model_name: 'xception' or 'mesonet' or 'efficientnet'
             weights_path: Path to pretrained weights
         """
-        self.model_name = model_name
-        # maybe we don't need this
-        # self.weights_path = weights_path
-        self.model = None
-
-    def load_model(self, weights_path, device):
-        """Load the selected model."""
-        self.model = efficientnet.load_model(weights_path=weights_path, device=device)
+        super().__init__(model_name, weights_path)
 
     def predict_single(self, model, image_tensor, device):
         """Run prediction on a single image."""
@@ -112,39 +107,42 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         image_size = model_cfg["image_size"]
         transform = get_val_transforms(image_size)
         face_pred_result = []
-        print("Start processing faces")
+        logger.info("Start processing faces")
         for idx, face in enumerate(faces):
-            if torch.is_tensor(face):
-                # Move channels from front to back: (3, 160, 160) -> (160, 160, 3)
-                face = face.permute(1, 2, 0).cpu().numpy()
-            transformed = transform(image=face)
-            image_tensor = transformed["image"]
-            probs = self.predict_single(self.model, image_tensor, device)
+            try:
+                if torch.is_tensor(face):
+                    # Move channels from front to back: (3, 160, 160) -> (160, 160, 3)
+                    face = face.permute(1, 2, 0).cpu().numpy()
+                transformed = transform(image=face)
+                image_tensor = transformed["image"]
+                probs = self.predict_single(self.model, image_tensor, device)
 
-            fake_prob = probs[0]
-            real_prob = probs[1]
-            prediction = "REAL" if real_prob >= model_cfg["threshold"] else "FAKE"
+                fake_prob = probs[0]
+                real_prob = probs[1]
+                prediction = "real" if real_prob >= model_cfg["threshold"] else "fake"
 
-            face_pred_result.append(
-                {
-                    "face idx": idx,
-                    "prediction": prediction,
-                    "real_prob": real_prob,
-                    "fake_prob": fake_prob,
-                    "confidence": max(fake_prob, real_prob),
-                }
-            )
+                face_pred_result.append(
+                    {
+                        "face idx": idx,
+                        "prediction": prediction,
+                        "real_prob": real_prob,
+                        "fake_prob": fake_prob,
+                        "confidence": max(fake_prob, real_prob),
+                    }
+                )
+            except Exception as e:
+                logger.warning("Cannot process face ", idx)
+                continue
 
-        # Print summary
-        print("\n" + "=" * 60)
-        print("Batch Inference Results")
-        print("=" * 60)
-        print(f"Total images: {len(face_pred_result)}")
-        real_count = sum(1 for r in face_pred_result if r["prediction"] == "REAL")
-        fake_count = sum(1 for r in face_pred_result if r["prediction"] == "FAKE")
-        print(f"Predicted REAL: {real_count}")
-        print(f"Predicted FAKE: {fake_count}")
-        print("=" * 60 + "\n")
+        if len(face_pred_result) == 0:
+            return {}
 
-        # investigate it further to find the best way to calculate facial score here
-        return fake_count / (fake_count + real_count)
+        real_count = sum(1 for r in face_pred_result if r["prediction"] == "real")
+        fake_count = sum(1 for r in face_pred_result if r["prediction"] == "fake")
+        summary = {
+            "score": fake_count / (fake_count + real_count),
+            "per_frame_score": [x["confidence"] for x in face_pred_result],
+            "details": "This contain efficientnet result",
+        }
+
+        return summary

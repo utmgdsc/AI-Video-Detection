@@ -10,8 +10,8 @@ datasets:
     dataset_path:
     example_video_path:
   faceforensic:
-    dataset_path: "/home/gdgteam1/AI-Video-Detection/backend/dataset/FaceForensics++"
-    example_video_path: "/home/gdgteam1/AI-Video-Detection/backend/dataset/FaceForensics++/original/002.mp4"
+    dataset_path: "./backend/dataset/FaceForensics++"
+    example_video_path: "./backend/dataset/FaceForensics++/original/002.mp4"
   kaggle:
     dataset_path:
     example_video_path:
@@ -25,7 +25,7 @@ models:
   efficientnet_b1:
     active: true
     architecture: "efficientnet_b1"
-    weights_path: "/home/gdgteam1/AI-Video-Detection/backend/models/DeepFake_EfficientNet/outputs/checkpoints/best_model.pth"
+    weights_path: "./backend/models/DeepFake_EfficientNet/outputs/checkpoints/best_model.pth"
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5

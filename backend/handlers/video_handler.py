@@ -11,16 +11,18 @@ from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
+import logging
 
+logger = logging.getLogger(__name__)
 class VideoHandler:
     def __init__(self):
         """Initialize video handler with analyzers."""
-        # change to XceptionNet facial analyzer
+        # TODO: Add xceptionnet facial analyzer
         # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet"
         )
-        # change to mesonet facial analyzer
+        # TODO: Add mesonet facial analyzer
         # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
 
@@ -43,18 +45,18 @@ class VideoHandler:
         # 1. Extract frames from video
         frames = video_processor.extract_frames(video_path, sample_rate)
         if frames != []:
-            print("FRAMES EXTRACTED!!!")
+            logger.info("frame extracted")
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
         if faces:
-            print("FACES DETECTED!!!")
+            logger.info("faces detected")
 
         # 3. If faces found, run facial analyzer
         if faces:
             facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"], device=device
             )
-            print("facial_score is", facial_score)
+            logger.info(f"facial_score: {facial_score['score']}")
 
         # 4. Run image analyzer on frames
         image_score = self.image_analyzer.process(frames)
