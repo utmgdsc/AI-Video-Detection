@@ -29,7 +29,6 @@ Note: This file results uses a modified version of the preprocessing pipeline pr
 ## Code Changes
 - Added `backend/models/MesoNet/activate_conda_env.sh`
 - Added `backend/models/MesoNet/make-video-predictions.py`
-- Added `backend/models/MesoNet/predict_standard_predictions.sh`
 - Modified `02-source-and-setup.md`
 
 ## How to Run
@@ -56,15 +55,11 @@ With the Conda environment activated, the legacy Python 3.6 scripts can now be r
 
 # The modified pipeline make-video-predictions.py makes use of the same provided pipeline, but creates a CSV file to a preexisting 'predictions' directory on the same level.
 # and takes at least 3 arguments: a weight, a directory in the test set, and the class of the test set (between 0 and 1)
-# The default path to the test set is to the AIGVDBench standard split test set, '../../../dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/'
+# The default path to the test set is to the AIGVDBench standard split test set, 'AI-Video-Detection/backend/dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/'
 python3 -u make-video-predictions.py Meso4_DF.h5 real 1.0
 
 # A fourth argument can be provided to specify a new path to the test set. 
 python3 -u make-video-predictions.py Meso4_DF.h5 Deepfakes 0.0 '../../dataset/FaceForensics++ Dataset'
-
-# A script has been provided to make predictions on all the different directories in the AIGVDBench test set
-# The program will run as a background process and redirect standard output to a log_DIR-NAME.txt in a preexisting 'logs' directory on the same level.
-./predict_standard_test.sh
 ```
 
 ## Verification
