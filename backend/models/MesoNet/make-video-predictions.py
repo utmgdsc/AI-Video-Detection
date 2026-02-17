@@ -20,6 +20,8 @@ from math import floor
 import numpy as np
 from classifiers import *
 from pipeline import *
+import imageio
+from imageio.core.format import CannotReadFrameError
 
 def get_cmd_args():
     '''
@@ -82,11 +84,10 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
 
             curr_row = [act_class, curr_pred, score, dir, vid] # Format of CSV rows
             csv_arrs.append(curr_row)
-        except RuntimeError as error:
+        except CannotReadFrameError as error:
             print(f"Error on video {vid}:\n")
             traceback.print_exc()
-            print("\nAuthor note: If the error is 'RuntimeError: Frame is 0 bytes, but expected [XXXX]', then this " \
-            "error is likely caused by the outdated original provided MesoNet pipeline.py.\n" \
+            print("\nAuthor note: This error is likely caused by the outdated original provided MesoNet pipeline.py.\n" \
             "The original pipeline uses imageio to read the metadata 'nframes', which is legacy code. " \
             "The pipeline tries to read a nonexistent frame that is out of bounds of the video's total frames.")
 
