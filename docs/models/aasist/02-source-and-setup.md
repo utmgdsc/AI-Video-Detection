@@ -37,7 +37,7 @@ List exactly what you installed (with versions if possible):
   - soundfile
   - torch
   - json (standard library)
-  - librose
+  - librosa
   - torchaudio
 
 ---
@@ -67,7 +67,7 @@ Weights:
 - Where to place it: backend/models/AASIST/aasist_detector/weights/AASIST.pth
 
 Dataset: 
-- Name: ASVspoof 2019 — Logical Access (LA
+- Name: ASVspoof 2019 — Logical Access (LA)
 - Source: https://www.kaggle.com/datasets/awsaf49/asvpoof-2019-dataset
 
 Storage Location:
@@ -99,18 +99,12 @@ PY
 
 ```
 
-#Test real AVspoof file (.flac file) 
+# Test real AVspoof file (.flac file) 
 
 ```bash
-# Test Dummy wav
+# Test real ASVspoof .flac file
 python - <<'PY'
-import numpy as np, soundfile as sf
 from backend.models.AASIST.aasist_detector.detector import AASISTDetector
-
-# Create a short dummy WAV (for pipeline validation only)
-sr = 16000
-x = (np.random.randn(sr * 2) * 0.01).astype("float32")
-sf.write("dummy.wav", x, sr)
 
 det = AASISTDetector(
     conf_path="backend/models/AASIST/aasist_detector/config/AASIST.conf",
@@ -118,8 +112,12 @@ det = AASISTDetector(
     device="cpu",
 )
 
-print("spoof score:", det.predict_wav("dummy.wav"))
+# Replace with actual path to a real .flac file
+flac_path = "backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_dev/flac/LA_D_1000137.flac"
+
+print("spoof score:", det.predict_wav(flac_path))
 PY
+
 
 ```
 
