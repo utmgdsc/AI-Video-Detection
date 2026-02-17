@@ -30,6 +30,7 @@
 
 ## Code Changes
 - Added `backend/models/AASIST/preprocessing/audionorm.py`
+- Added `backend/models/AASIST/preprocessing/baseline_metrics.py`
 - Added `backend/models/AASIST/scripts/make_baseline_report.py`
 - Added `backend/models/AASIST/scripts/plot_accuracy_vs_epoch.py`
 - Added `backend/models/AASIST/train/train.py`

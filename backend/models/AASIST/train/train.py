@@ -10,6 +10,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 from backend.models.AASIST.aasist_detector.model import Model
+from backend.models.AASIST.preprocessing.audionorm import pad_or_crop
 
 
 def set_seed(seed: int = 1337):
@@ -19,8 +20,6 @@ def set_seed(seed: int = 1337):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-
-def pad_or_crop(x: np.ndarray, target_len: int, train: bool) -> np.ndarray:
     if len(x) == target_len:
         return x
     if len(x) < target_len:
