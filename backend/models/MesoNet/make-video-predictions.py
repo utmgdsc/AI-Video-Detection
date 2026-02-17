@@ -44,7 +44,7 @@ def get_cmd_args():
                         type=Path)
     return parser.parse_args()
 
-def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_count = 30):
+def CSV_compute_accuracy(classifier, dirname, act_class, dataset_dir, frame_subsample_count = 30):
     '''
     Using a slightly modified pipeline provided by the MesoNet authors, Make predictions over a
     directory of videos with the same class.
@@ -53,7 +53,7 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
     :param classifier: the model making predictions, loaded with a weight
     :param dirname: the class name of the videos
     :param act_class: the value assigned to the class (0.0 is fake, 1.0 is real)
-    :param dir: the path to the dataset directory
+    :param dataset_dir: the path to the dataset directory
     :param frame_subsample_count: The number of frames to extract from each video
     '''
     labels = ['actual_class', 'predicted_class', 'score', 'type', 'video_name']
@@ -82,7 +82,7 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
             else:
                 curr_pred = 0.0
 
-            curr_row = [act_class, curr_pred, score, dir, vid] # Format of CSV rows
+            curr_row = [act_class, curr_pred, score, dataset_dir, vid] # Format of CSV rows
             csv_arrs.append(curr_row)
         except CannotReadFrameError as error:
             print(f"Error on video {vid}:\n")
@@ -91,24 +91,24 @@ def CSV_compute_accuracy(classifier, dirname, act_class, dir, frame_subsample_co
             "The original pipeline uses imageio to read the metadata 'nframes', which is legacy code. " \
             "The pipeline tries to read a nonexistent frame that is out of bounds of the video's total frames.")
 
-            curr_row = [act_class, -1.0, -1.0, dir, vid]
+            curr_row = [act_class, -1.0, -1.0, dataset_dir, vid]
             csv_arrs.append(curr_row)
     print(f"All videos predicted")
     return csv_arrs
 
-def create_CSV(data, weight_name, type):
+def create_CSV(data, weight_name, dataset_type):
     '''
     Creates a CSV file for a 2D list.
     Creates a directory 'predictions' if it does not already exist.
     
     The CSV file will be written to the file:
-    f'{weight_name}-predictions-{type}.csv'
+    f'{weight_name}-predictions-{dataset_type}.csv'
 
     :param data: A 2D list of data with the first row being the labels of the CSV
     '''
     output_dir = Path('predictions')
     output_dir.mkdir(exist_ok=True) 
-    output_path = output_dir / f'{weight_name}-predictions-{type}.csv'
+    output_path = output_dir / f'{weight_name}-predictions-{dataset_type}.csv'
     # Export to CSV
     with open(output_path, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=',')
@@ -137,3 +137,4 @@ if __name__ == "__main__":
     final_data = CSV_compute_accuracy(classifier, str(dir_path), act_class, set_dir)
     print(f"Now writing to CSV")
     create_CSV(final_data, weight_name, set_dir)
+    
