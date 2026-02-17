@@ -1,4 +1,4 @@
-# SCRUM-12: Preprocessing pipeline for Efficient Net
+# SCRUM-29: Preprocessing pipeline for AASIST
 
 ## Dataset
 - **Name:** ASVspoof 2019 — Logical Access (LA
@@ -30,9 +30,8 @@
 
 ## Code Changes
 - Added `backend/models/AASIST/preprocessing/audionorm.py`
-- Added `backend/models/AASIST/preprocessing/inspect_asvspoof2019_la.py`
-- Added `backend/models/AASIST/scripts/make_baseline.py`
-- Added `backend/models/AASIST/scripts/plot_accuracy.py`
+- Added `backend/models/AASIST/scripts/make_baseline_report.py`
+- Added `backend/models/AASIST/scripts/plot_accuracy_vs_epoch.py`
 - Added `backend/models/AASIST/train/train.py`
 - Updated `docs/models/aasist/02-preprocessing-checklist.md`
 - Updated `docs/models/aasist/02-preprocessing-template.md`
@@ -44,18 +43,18 @@
 # backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/`
 
 # Step 2: Verify dataset counts
-find dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_train -type f | wc -l
-find dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_dev   -type f | wc -l
-find dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_eval  -type f | wc -l
+find backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_train -type f | wc -l
+find backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_dev   -type f | wc -l
+find backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_eval  -type f | wc -l
 
 # Step 3: Run training (preprocessing happens internally)
-python -m backend.models.AASIST.train.train_aasist_baseline \
+python -m backend.models.AASIST.train.train \
   --train_wav_dir backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_train/flac \
   --train_protocol backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt \
   --dev_wav_dir backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_dev/flac \
   --dev_protocol backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt \
   --config_path backend/models/AASIST/aasist_detector/config/AASIST.conf
-
+``` 
 
 ## Verification
 - [x] Ran preprocessing end-to-end
