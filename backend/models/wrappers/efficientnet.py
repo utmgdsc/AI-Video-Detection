@@ -1,7 +1,7 @@
 """
 EfficientNet model wrapper for deepfake detection.
 
-Team member: [YOUR NAME - Update when implementing]
+Team member: Wu Hung Mao/Marvin Wu
 Docs: docs/models/efficientnet/
 
 This is a THIN WRAPPER that provides a standard interface to the
@@ -12,16 +12,23 @@ import sys
 import os
 import torch
 
-# Add the full repo to path (update path if repo name is different)
-REPO_PATH = os.path.join(os.path.dirname(__file__), '../DeepFake-EfficientNet')
-if os.path.exists(REPO_PATH):
-    sys.path.insert(0, REPO_PATH)
-else:
-    print(f"Warning: DeepFake-EfficientNet repo not found at {REPO_PATH}")
-    print("Add the full repo to backend/models/ first (see backend/models/README.md)")
+# 1. FIX PATH FIRST
+# Get the path to: backend/models/DeepFake_EfficientNet
+project_root = os.path.dirname(__file__)
+deepfake_path = os.path.abspath(os.path.join(project_root, "../DeepFake_EfficientNet"))
+
+# Add it to system path so internal imports like "from deepfake_detector..." work
+if deepfake_path not in sys.path:
+    sys.path.insert(0, deepfake_path)
+
+# 2. THEN IMPORT MODEL
+# Now Python can find the internal dependencies
+from backend.models.DeepFake_EfficientNet.deepfake_detector.models.efficientnet import (
+    DeepFakeDetector as EfficientNetModel,
+)
 
 
-def load_model(weights_path=None, model_name='efficientnet-b1'):
+def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
     """
     Load EfficientNet model.
 
@@ -33,17 +40,17 @@ def load_model(weights_path=None, model_name='efficientnet-b1'):
     Returns:
         model: Loaded PyTorch model ready for inference.
     """
-    # TODO: Implement based on the DeepFake-EfficientNet repo structure
-    # Example (update based on actual repo API):
-    # from deepfake_detector.models import DeepFakeDetector
-    # if weights_path is None:
-    #     weights_path = 'outputs/checkpoints/best_model.pth'
-    # model = DeepFakeDetector.from_pretrained(weights_path, model_name=model_name)
-    # return model
+    efficient_net_model = EfficientNetModel(model_name=model_name)
+    checkpoint = torch.load(weights_path, map_location=device)
 
-    raise NotImplementedError(
-        "Implement load_model() wrapper - see docs/models/efficientnet/02-source-and-setup.md"
-    )
+    if "model_state_dict" in checkpoint:
+        efficient_net_model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        efficient_net_model.load_state_dict(checkpoint)
+
+    efficient_net_model = efficient_net_model.to(device)
+    efficient_net_model.eval()
+    return efficient_net_model
 
 
 def predict(model, image):

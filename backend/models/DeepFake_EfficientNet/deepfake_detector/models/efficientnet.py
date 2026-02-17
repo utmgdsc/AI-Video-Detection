@@ -33,10 +33,10 @@ class DeepFakeDetector(nn.Module):
 
     def __init__(
         self,
-        model_name: str = 'efficientnet-b1',
+        model_name: str = "efficientnet-b1",
         num_classes: int = 2,
         dropout_rate: float = 0.5,
-        pretrained: bool = True
+        pretrained: bool = True,
     ):
         super(DeepFakeDetector, self).__init__()
 
@@ -59,10 +59,12 @@ class DeepFakeDetector(nn.Module):
             nn.Linear(num_ftrs, 1000, bias=True),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout_rate),
-            nn.Linear(1000, num_classes, bias=True)
+            nn.Linear(1000, num_classes, bias=True),
         )
 
-        logger.info(f"Model initialized with {num_ftrs} features -> {num_classes} classes")
+        logger.info(
+            f"Model initialized with {num_ftrs} features -> {num_classes} classes"
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -97,7 +99,7 @@ class DeepFakeDetector(nn.Module):
         status = "frozen" if freeze else "unfrozen"
         logger.info(f"Backbone {status}, classification head trainable")
 
-    def load_checkpoint(self, checkpoint_path: str, device: str = 'cpu') -> None:
+    def load_checkpoint(self, checkpoint_path: str, device: str = "cpu") -> None:
         """
         Load model weights from checkpoint.
 
@@ -108,8 +110,8 @@ class DeepFakeDetector(nn.Module):
         logger.info(f"Loading checkpoint from {checkpoint_path}")
         checkpoint = torch.load(checkpoint_path, map_location=device)
 
-        if 'model_state_dict' in checkpoint:
-            self.load_state_dict(checkpoint['model_state_dict'])
+        if "model_state_dict" in checkpoint:
+            self.load_state_dict(checkpoint["model_state_dict"])
             logger.info(f"Loaded model from epoch {checkpoint.get('epoch', 'unknown')}")
         else:
             self.load_state_dict(checkpoint)
@@ -120,7 +122,7 @@ class DeepFakeDetector(nn.Module):
         checkpoint_path: str,
         epoch: Optional[int] = None,
         optimizer_state: Optional[dict] = None,
-        metrics: Optional[dict] = None
+        metrics: Optional[dict] = None,
     ) -> None:
         """
         Save model checkpoint.
@@ -132,17 +134,17 @@ class DeepFakeDetector(nn.Module):
             metrics: Dictionary of metrics to save
         """
         checkpoint = {
-            'model_state_dict': self.state_dict(),
-            'model_name': self.model_name,
-            'num_classes': self.num_classes,
+            "model_state_dict": self.state_dict(),
+            "model_name": self.model_name,
+            "num_classes": self.num_classes,
         }
 
         if epoch is not None:
-            checkpoint['epoch'] = epoch
+            checkpoint["epoch"] = epoch
         if optimizer_state is not None:
-            checkpoint['optimizer_state_dict'] = optimizer_state
+            checkpoint["optimizer_state_dict"] = optimizer_state
         if metrics is not None:
-            checkpoint['metrics'] = metrics
+            checkpoint["metrics"] = metrics
 
         torch.save(checkpoint, checkpoint_path)
         logger.info(f"Checkpoint saved to {checkpoint_path}")

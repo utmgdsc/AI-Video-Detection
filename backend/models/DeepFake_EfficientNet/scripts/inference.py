@@ -34,7 +34,7 @@ def load_image(image_path, transform):
 
     # Apply transforms
     transformed = transform(image=image_rgb)
-    image_tensor = transformed['image'].unsqueeze(0)
+    image_tensor = transformed["image"].unsqueeze(0)
 
     return image_tensor
 
@@ -53,32 +53,40 @@ def predict_single(model, image_tensor, device):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='DeepFake Detection Inference',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="DeepFake Detection Inference",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument('--input', type=str, required=True,
-                        help='Input image or directory')
-    parser.add_argument('--checkpoint', type=str, required=True,
-                        help='Path to model checkpoint')
-    parser.add_argument('--model', type=str, default='efficientnet-b1',
-                        help='Model architecture')
-    parser.add_argument('--threshold', type=float, default=0.5,
-                        help='Classification threshold')
-    parser.add_argument('--output', type=str, default=None,
-                        help='Output file for batch inference results')
+    parser.add_argument(
+        "--input", type=str, required=True, help="Input image or directory"
+    )
+    parser.add_argument(
+        "--checkpoint", type=str, required=True, help="Path to model checkpoint"
+    )
+    parser.add_argument(
+        "--model", type=str, default="efficientnet-b1", help="Model architecture"
+    )
+    parser.add_argument(
+        "--threshold", type=float, default=0.5, help="Classification threshold"
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Output file for batch inference results",
+    )
 
     args = parser.parse_args()
 
     # Setup logger
-    logger = setup_logger(name='inference', level='INFO')
+    logger = setup_logger(name="inference", level="INFO")
 
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info("DeepFake Detection Inference")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     # Device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     # Load model
@@ -89,7 +97,7 @@ def main():
     model.eval()
 
     # Prepare transform
-    image_size = 240 if 'b1' in args.model else 224
+    image_size = 240 if "b1" in args.model else 224
     transform = get_val_transforms(image_size)
 
     # Check if input is file or directory
@@ -106,13 +114,13 @@ def main():
         real_prob = probs[1]
         prediction = "REAL" if real_prob >= args.threshold else "FAKE"
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"Image: {input_path.name}")
         print(f"Prediction: {prediction}")
         print(f"Confidence: {max(fake_prob, real_prob):.2%}")
         print(f"Real probability: {real_prob:.4f}")
         print(f"Fake probability: {fake_prob:.4f}")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
     elif input_path.is_dir():
         # Batch inference on directory
@@ -120,7 +128,7 @@ def main():
 
         # Get all images
         image_files = []
-        for ext in ['*.jpg', '*.jpeg', '*.png']:
+        for ext in ["*.jpg", "*.jpeg", "*.png"]:
             image_files.extend(glob.glob(str(input_path / ext)))
 
         if not image_files:
@@ -131,7 +139,7 @@ def main():
 
         results = []
 
-        for image_path in tqdm(image_files, desc='Processing'):
+        for image_path in tqdm(image_files, desc="Processing"):
             try:
                 image_tensor = load_image(image_path, transform)
                 probs = predict_single(model, image_tensor, device)
@@ -140,32 +148,35 @@ def main():
                 real_prob = probs[1]
                 prediction = "REAL" if real_prob >= args.threshold else "FAKE"
 
-                results.append({
-                    'image': Path(image_path).name,
-                    'prediction': prediction,
-                    'real_prob': real_prob,
-                    'fake_prob': fake_prob,
-                    'confidence': max(fake_prob, real_prob)
-                })
+                results.append(
+                    {
+                        "image": Path(image_path).name,
+                        "prediction": prediction,
+                        "real_prob": real_prob,
+                        "fake_prob": fake_prob,
+                        "confidence": max(fake_prob, real_prob),
+                    }
+                )
 
             except Exception as e:
                 logger.error(f"Error processing {image_path}: {e}")
                 continue
 
         # Print summary
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Batch Inference Results")
-        print("="*60)
+        print("=" * 60)
         print(f"Total images: {len(results)}")
-        real_count = sum(1 for r in results if r['prediction'] == 'REAL')
-        fake_count = sum(1 for r in results if r['prediction'] == 'FAKE')
+        real_count = sum(1 for r in results if r["prediction"] == "REAL")
+        fake_count = sum(1 for r in results if r["prediction"] == "FAKE")
         print(f"Predicted REAL: {real_count}")
         print(f"Predicted FAKE: {fake_count}")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
         # Save results if output specified
         if args.output:
             import pandas as pd
+
             df = pd.DataFrame(results)
             df.to_csv(args.output, index=False)
             logger.info(f"Results saved to: {args.output}")
@@ -177,5 +188,5 @@ def main():
     logger.info("Inference complete!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

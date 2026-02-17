@@ -32,12 +32,9 @@ class ImageAnalyzer:
                 'details': str
             }
         """
-        if self.model is None:
-            self.load()
+        raise NotImplementedError("Implement process()")
 
         # TODO: Implement
         # 1. Preprocess each frame
         # 2. Run inference on each frame
         # 3. Aggregate scores across frames
-
-        raise NotImplementedError("Implement process()")
