@@ -105,3 +105,9 @@ result_vid/
 saved_weights/
 *.npy
 *.mp4
+
+# Analysis Directories
+sandbox
+logs
+predictions
+
