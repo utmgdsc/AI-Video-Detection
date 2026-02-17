@@ -11,19 +11,33 @@ Flow:
 
 import os
 import tempfile
+import sys
 from facenet_pytorch import MTCNN
 import torch
 import argparse
+import yaml
 
 from backend.handlers.audio_handler import AudioHandler
 from backend.handlers.video_handler import VideoHandler
 from backend.preprocessing.video_processor import separate_audio
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("result.log"),
+        logging.StreamHandler(),
+    ],
+)
+
+logger = logging.getLogger(__name__)
 
 class DeepfakeDetector:
     """Main orchestrator for deepfake detection pipeline."""
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, device="cuda"):
         """
         Initialize detector with handlers.
 
@@ -34,7 +48,7 @@ class DeepfakeDetector:
         self.audio_handler = AudioHandler(
             weights_path=self.config.get("aasist_weights")
         )
-        self.video_handler = VideoHandler()
+        self.video_handler = VideoHandler(device)
 
     def analyze(self, video_path, mtcnn, batch_size, frame_skip):
         """
@@ -74,7 +88,12 @@ class DeepfakeDetector:
         # 2. Analyze video
         try:
             video_result = self.video_handler.process(
-                video_path, mtcnn, batch_size, sample_rate=frame_skip
+                self.config["models"],
+                self.config["device"],
+                video_path,
+                mtcnn,
+                batch_size,
+                sample_rate=frame_skip,
             )
             results["video_score"] = video_result["combined_score"]
         except Exception as e:
@@ -104,93 +123,59 @@ class DeepfakeDetector:
 
 
 def main():
-    """Example usage."""
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Usage: python -m backend.main <video_path>")
-        sys.exit(1)
-
-    # video_path = sys.argv[1]
-
     parser = argparse.ArgumentParser(
         description="Extract faces from videos and images using MTCNN",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # Input/Output
+    # Input
     parser.add_argument(
         "--input-dir",
         type=str,
-        required=True,
+        required=False,
         help="Input directory containing videos/images",
     )
-    # parser.add_argument(
-    #     "--output-dir",
-    #     type=str,
-    #     required=True,
-    #     help="Output directory for extracted faces",
-    # )
 
-    # Processing options
     parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["video", "image"],
-        default="video",
-        help="Processing mode",
-    )
-    parser.add_argument(
-        "--batch-size", type=int, default=60, help="Batch size for processing"
-    )
-    parser.add_argument(
-        "--frame-skip",
-        type=int,
-        default=30,
-        help="Process every Nth frame (video only)",
+        "--config", type=str, required=False, default="./backend/config/ensemble.yaml"
     )
 
-    # MTCNN parameters
-    parser.add_argument("--stride", type=int, default=1, help="Detection stride")
-    parser.add_argument(
-        "--margin", type=int, default=50, help="Margin around detected face"
-    )
-    parser.add_argument(
-        "--min-face-size", type=int, default=100, help="Minimum face size to detect"
-    )
-
-    # Device
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="cuda",
-        choices=["cuda", "cpu"],
-        help="Device to use",
-    )
     args = parser.parse_args()
-    device = args.device
+
+    config_path = args.config
+
+    with open(config_path, "r") as file:
+        cfg = yaml.safe_load(file)
+
+    device = cfg["device"]
+    margin = cfg["margin"]
+    min_face_size = cfg["min_face_size"]
     if device == "cuda" and not torch.cuda.is_available():
-        print("CUDA not available, using CPU")
+        logger.warning("CUDA not available, using CPU")
         device = "cpu"
 
     # Initialize MTCNN
-    print("Initializing MTCNN...")
+    logger.info("Initializing MTCNN...")
     mtcnn = MTCNN(
-        margin=args.margin,
-        min_face_size=args.min_face_size,
+        margin=margin,
+        min_face_size=min_face_size,
         device=device,
         keep_all=True,
     )
 
-    video_path = args.input_dir
-    detector = DeepfakeDetector()
-    result = detector.analyze(video_path, mtcnn, args.batch_size, args.frame_skip)
+    if args.input_dir:
+        video_path = args.input_dir
+    else:
+        video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
 
-    print(f"Is Fake: {result['is_fake']}")
-    print(f"Confidence: {result['confidence']:.2%}")
-    print(f"Audio Score: {result['audio_score']}")
-    print(f"Video Score: {result['video_score']}")
-    print(f"Details: {result['details']}")
+    detector = DeepfakeDetector(config=cfg, device=device)
+    result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
+
+    logger.info(f"Is Fake: {result['is_fake']}")
+    logger.info(f"Confidence: {result['confidence']:.2%}")
+    logger.info(f"Audio Score: {result['audio_score']}")
+    logger.info(f"Video Score: {result['video_score']}")
+    logger.info(f"Details: {result['details']}")
 
 
 if __name__ == "__main__":
