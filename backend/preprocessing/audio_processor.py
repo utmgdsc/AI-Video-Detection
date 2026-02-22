@@ -4,7 +4,11 @@ Audio preprocessing utilities.
 Prepares audio for AASIST model.
 """
 
+from pathlib import Path
 import numpy as np
+import torch
+import soundfile as sf
+import librosa
 
 
 def load_audio(audio_path, sample_rate=16000):
@@ -24,7 +28,18 @@ def load_audio(audio_path, sample_rate=16000):
     # audio, sr = librosa.load(audio_path, sr=sample_rate)
     # return audio
 
-    raise NotImplementedError("Implement load_audio()")
+    audio_path = str(audio_path)
+    x, sr = sf.read(audio_path)
+
+    # convert stereo -> mono
+    if x.ndim == 2:
+        x = x.mean(axis=1)
+
+    # resample if needed
+    if sr != sample_rate:
+        x = librosa.resample(x.astype(np.float32), orig_sr=sr, target_sr=sample_rate)
+
+    return x.astype(np.float32)
 
 
 def preprocess(audio_path):
@@ -43,4 +58,11 @@ def preprocess(audio_path):
     # 3. Normalize
     # 4. Convert to tensor
 
-    raise NotImplementedError("Implement preprocess()")
+    x = load_audio(audio_path, sample_rate=sample_rate)
+
+    # normalization (safe, simple)
+    peak = np.max(np.abs(x)) + 1e-9
+    x = x / peak
+
+    # tensor shape [T] (your wrapper handles [T] -> [1,T])
+    return torch.from_numpy(x)

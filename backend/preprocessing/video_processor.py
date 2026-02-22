@@ -7,6 +7,8 @@ Uses OpenCV for frame extraction and face detection.
 import cv2
 import numpy as np
 from PIL import Image
+import subprocess
+from pathlib import Path
 
 
 def extract_frames(video_path, sample_rate=1):
@@ -106,4 +108,19 @@ def separate_audio(video_path, output_path):
     # video = VideoFileClip(video_path)
     # video.audio.write_audiofile(output_path)
 
-    raise NotImplementedError("Implement separate_audio()")
+    video_path = str(video_path)
+    output_path = str(output_path)
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-vn",                 # no video
+        "-ac", "1",            # mono
+        "-ar", "16000",        # 16kHz
+        "-f", "wav",
+        output_path,
+    ]
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return output_path
