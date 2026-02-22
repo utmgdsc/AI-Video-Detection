@@ -28,3 +28,5 @@ moviepy>=1.0.3
 
 #Optional: for plotting accuracy
 matplotlib>=3.7.0
+# Use yaml file to define configuration for the ensemble
+PyYAML==6.0.1
