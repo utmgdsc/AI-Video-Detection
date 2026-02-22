@@ -37,9 +37,12 @@ class AudioHandler:
 
         # TODO: Implement
         # 1. Preprocess audio
-        # audio = audio_processor.preprocess(audio_path)
+        audio = audio_processor.preprocess(audio_path)
         # 2. Run inference
-        # score = aasist.predict(self.model, audio)
+        score = aasist.predict(self.model, audio)
         # 3. Return result
-
-        raise NotImplementedError("Implement process()")
+        return {
+        "score": score,
+        "confidence": score,  # for now same as score
+        "details": f"AASIST spoof probability: {score:.6f}",
+        }
