@@ -7,18 +7,27 @@ Based on content type, routes to:
 """
 
 import sys
-from backend.handlers.facial_analyzer import FacialAnalyzer
+from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
+import logging
 
+logger = logging.getLogger(__name__)
 class VideoHandler:
-    def __init__(self):
+
+    def __init__(self, device):
         """Initialize video handler with analyzers."""
-        self.facial_analyzer = FacialAnalyzer()
+        # TODO: Add xceptionnet facial analyzer
+        # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
+        self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
+            model_name="EfficientNet", device=device
+        )
+        # TODO: Add mesonet facial analyzer
+        # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
 
-    def process(self, video_path, mtcnn, batch_size, sample_rate):
+    def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
         """
         Process video file and return deepfake scores.
 
@@ -36,16 +45,19 @@ class VideoHandler:
         # TODO: Implement
         # 1. Extract frames from video
         frames = video_processor.extract_frames(video_path, sample_rate)
-        print("FRAMES EXTRACTED!!!")
+        if frames != []:
+            logger.info("frame extracted")
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
         if faces:
-            print("FACES DETECTED!!!")
-        print("BYE BYE!!!")
+            logger.info("faces detected")
 
         # 3. If faces found, run facial analyzer
         if faces:
-            facial_score = self.facial_analyzer.process(faces)
+            facial_score = self.efficientnet_facial_analyzer.process(
+                faces, models_cfg["efficientnet_b1"]
+            )
+            logger.info(f"facial_score: {facial_score['score']}")
 
         # 4. Run image analyzer on frames
         image_score = self.image_analyzer.process(frames)
