@@ -100,7 +100,6 @@ class DeepfakeDetector:
 
         # Simple average for now
         # TODO: Experiment with weighted combinations
-        return (audio_score + video_score) / 2
 
 
 def main():

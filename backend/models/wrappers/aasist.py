@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Union
 
+import soundfile as sf
 import torch
 
 from backend.models.AASIST.aasist_detector.detector import AASISTDetector
@@ -88,22 +89,16 @@ def predict(detector: AASISTDetector, audio: torch.Tensor) -> float:
     return float(spoof_prob.mean().item())
 
 
-@torch.no_grad()
-def predict_wav(detector: AASISTDetector, wav_path: Union[str, Path]) -> float:
-    """
-    Convenience: let the detector load wav from disk.
-    Returns spoof probability 0..1.
-    """
-    return float(detector.predict_wav(str(wav_path)))
-
 
 # -------------------------------------------------------------------
-# Optional smoke test (toggle OR comment out)
+# Optional test
 # -------------------------------------------------------------------
-RUN_SMOKE_TEST = True  # <-- set True when you want to run a quick test
+RUN_SMOKE_TEST = True  #set True when you want to run a quick test
 
 if __name__ == "__main__" and RUN_SMOKE_TEST:
-    det = load_model(device="cpu")  # or "cuda"
-    score = predict_wav(det, "test_audio.wav")  # ensure a real path here
+    det = load_model(device="cpu")
+    audio, _ = sf.read("test_audio.wav")
+    audio_tensor = torch.tensor(audio)
+    score = predict(det, audio_tensor)
     print("Spoof probability:", score)
 
