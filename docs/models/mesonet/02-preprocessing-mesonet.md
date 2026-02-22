@@ -7,7 +7,7 @@ Note: This file results uses a modified version of the preprocessing pipeline pr
 - **License:** cc-by-4.0
 
 ## Storage Location
-- **Path:** /home/gdgteam1/AI-Video-Detection/backend/dataset/AIGVDBench
+- **Path:** /AI-Video-Detection/backend/dataset/AIGVDBench
 - **Access Method:** python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='AIGVDBench/AIGVDBench', repo_type='dataset', local_dir='./AIGVDBench')"
 
 ## Data Split
@@ -56,10 +56,7 @@ With the Conda environment activated, the legacy Python 3.6 scripts can now be r
 # The modified pipeline make-video-predictions.py makes use of the same provided pipeline, but creates a CSV file to a preexisting 'predictions' directory on the same level.
 # and takes at least 3 arguments: a weight, a directory in the test set, and the class of the test set (between 0 and 1)
 # The default path to the test set is to the AIGVDBench standard split test set, 'AI-Video-Detection/backend/dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/'
-python3 -u make-video-predictions.py Meso4_DF.h5 real 1.0
-
-# A fourth argument can be provided to specify a new path to the test set. 
-python3 -u make-video-predictions.py Meso4_DF.h5 Deepfakes 0.0 '../../dataset/FaceForensics++ Dataset'
+python3 -u make-video-predictions.py Meso4_DF.h5 1.0 '../../dataset/AIGVDBench/AIGVDBench/split_dataset/dataset_standard_splits/test/real'
 ```
 
 ## Verification

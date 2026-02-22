@@ -137,4 +137,3 @@ if __name__ == "__main__":
     final_data = CSV_compute_accuracy(classifier, str(dir_path), act_class, set_dir)
     print(f"Now writing to CSV")
     create_CSV(final_data, weight_name, set_dir)
-    
