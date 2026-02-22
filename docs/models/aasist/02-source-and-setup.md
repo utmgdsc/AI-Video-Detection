@@ -27,7 +27,7 @@
 
 List exactly what you installed (with versions if possible):
 
-- OS: macOS (Apple Silicon laptop)
+- OS: Linux (remote machine)
 - Python: 3.10 (Conda environment)
 - PyTorch: 2.1+ (CPU inference)
 - CUDA: Not used (CPU only)
@@ -37,6 +37,8 @@ List exactly what you installed (with versions if possible):
   - soundfile
   - torch
   - json (standard library)
+  - librosa
+  - torchaudio
 
 ---
 
@@ -52,22 +54,31 @@ cd AI-Video-Detection
 conda create -n audio-df python=3.10 -y
 conda activate audio-df
 
-pip install torch numpy soundfile
+pip install -r backend/requirements.txt
 
 
 ```
 
 ### 2) Any downloads needed (weights/datasets)
 
+Weights: 
 - What to download: Pretrained AASIST checkpoint (AASIST.pth) 
 - Link: https://github.com/clovaai/aasist/tree/main/models/weights
 - Where to place it: backend/models/AASIST/aasist_detector/weights/AASIST.pth
+
+Dataset: 
+- Name: ASVspoof 2019 — Logical Access (LA)
+- Source: https://www.kaggle.com/datasets/awsaf49/asvpoof-2019-dataset
+
+Storage Location:
+- Path: /home/gdgteam1/AI-Video-Detection/backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/
+- Access Method: Dataset is downloaded manually from Kaggle and unzipped into backend/dataset/
 
 
 ### 3) How to run (Test)
 
 ```bash
-# commands here
+# Test Dummy wav
 python - <<'PY'
 import numpy as np, soundfile as sf
 from backend.models.AASIST.aasist_detector.detector import AASISTDetector
@@ -85,6 +96,28 @@ det = AASISTDetector(
 
 print("spoof score:", det.predict_wav("dummy.wav"))
 PY
+
+```
+
+# Test real AVspoof file (.flac file) 
+
+```bash
+# Test real ASVspoof .flac file
+python - <<'PY'
+from backend.models.AASIST.aasist_detector.detector import AASISTDetector
+
+det = AASISTDetector(
+    conf_path="backend/models/AASIST/aasist_detector/config/AASIST.conf",
+    ckpt_path="backend/models/AASIST/aasist_detector/weights/AASIST.pth",
+    device="cpu",
+)
+
+# Replace with actual path to a real .flac file
+flac_path = "backend/dataset/ASVspoof2019_LA/ASVspoof2019_LA/ASVspoof2019_LA_dev/flac/LA_D_1000137.flac"
+
+print("spoof score:", det.predict_wav(flac_path))
+PY
+
 
 ```
 
@@ -111,4 +144,4 @@ PY
 ## Notes for teammates
 
 - If someone else sets this up from scratch, what do they need to know?
-Audio should be converted to mono WAV before inference for consistency.
+- Model expects mono, 16kHz audio; script will average stereo to mono; resampling is not done automatically (sample rate mismatch raises error).
