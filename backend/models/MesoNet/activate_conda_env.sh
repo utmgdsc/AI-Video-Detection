@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Assuming the Conda environment is located on Conda's default created path
 CONDA_PATH="$HOME/miniconda3/bin/conda"
 
