@@ -100,6 +100,8 @@ class DeepfakeDetector:
 
         # Simple average for now
         # TODO: Experiment with weighted combinations
+        #will do this once Mesonet + Xception are integrated
+        return (audio_score + video_score) / 2
 
 
 def main():

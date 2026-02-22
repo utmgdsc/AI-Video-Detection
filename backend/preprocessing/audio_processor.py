@@ -58,7 +58,7 @@ def preprocess(audio_path):
     # 3. Normalize
     # 4. Convert to tensor
 
-    x = load_audio(audio_path, sample_rate=sample_rate)
+    x = load_audio(audio_path, sample_rate=16000)
 
     # normalization (safe, simple)
     peak = np.max(np.abs(x)) + 1e-9
