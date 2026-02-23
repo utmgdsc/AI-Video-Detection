@@ -38,6 +38,7 @@ models:
     #   normalization: "imagenet" # Standard ImageNet mean/std
 
   xceptionnet:
+    weights_path: "./backend/models/XceptionNet-Detector/Deepfake-Detection/output/xception_ff23/best.pkl"
 
   mesonet:
 
