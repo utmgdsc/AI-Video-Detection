@@ -1,0 +1,3 @@
+[submodule "backend/models/XceptionNet-Detector/Deepfake-Detection"]
+	path = backend/models/XceptionNet-Detector/Deepfake-Detection
+	url = https://github.com/MarcoBosss/Deepfake-Detection.git
