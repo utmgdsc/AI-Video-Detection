@@ -1,13 +1,12 @@
 """
 MesoNet model for deepfake detection.
 
-Team member: [YOUR NAME]
+Team member: Frank Bi
 Docs: docs/models/mesonet/
 """
 
-import torch
-import torch.nn as nn
-
+# TODO: Check if this import works
+from models.MesoNet.mesonet_interface import MesoNetClient as MesoNetModel
 # TODO: Implement model loading
 # Reference your docs/models/mesonet/02-source-and-setup.md for setup instructions
 
@@ -23,8 +22,8 @@ def load_model(weights_path=None):
     Returns:
         model: Loaded PyTorch model ready for inference.
     """
-    # TODO: Implement
-    raise NotImplementedError("Implement load_model() - see docs/models/mesonet/")
+    model = MesoNetModel()
+    model.load_model(weights_path)
 
 
 def predict(model, image):
@@ -40,3 +39,20 @@ def predict(model, image):
     """
     # TODO: Implement
     raise NotImplementedError("Implement predict()")
+
+
+def process(model: MesoNetModel, faces, model_cfg):
+    """
+    Analyze faces for deepfake detection.
+
+    Args:
+        faces: List of face images (cropped from video frames)
+
+    Returns:
+        dict: {
+            'score': float (0-1, higher = more likely fake),
+            'per_frame_scores': list of floats,
+            'details': str
+        }
+    """
+    return model.process(faces, model_cfg)
