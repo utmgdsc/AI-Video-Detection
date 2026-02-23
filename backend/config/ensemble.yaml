@@ -40,5 +40,8 @@ models:
   xceptionnet:
 
   mesonet:
+    active: false
+    architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4" # TODO: pass yaml into facial_analyzer init?
+    weights_path: "./backend/models/MesoNet/weights/Meso4_DF.h5"           # TODO: also pass yaml into facial_analyzer load?
 
   aasist:
