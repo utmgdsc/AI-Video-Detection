@@ -185,17 +185,18 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
         if not faces: 
             return summary
         
+        use_cuda = (self.device.type == "cuda")
         fake_count = 0
         real_count = 0
         scores = []
         for face in faces: 
-            prediction, output = predict_with_model(face, self.model, cuda=cuda)
+            prediction, output = predict_with_model(face, self.model, cuda=use_cuda)
             if prediction:
                 fake_count+=1
             else: 
                 real_count+=1
 
-            scores.append(output.detach().cpu().numpy()[0][1]) # append fake score
+            scores.append(float(output.detach().cpu().numpy()[0][1])) # append fake score
         
         summary = {
             "score": fake_count / (fake_count + real_count),
