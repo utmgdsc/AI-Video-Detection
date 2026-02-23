@@ -13,7 +13,7 @@ from backend.preprocessing import image_processor
 from backend.models.DeepFake_EfficientNet.deepfake_detector.data import (
     get_val_transforms,
 )
-
+from backend.models.wrappers.xception import predict_with_model
 import logging
 
 logger = logging.getLogger(__name__)
@@ -147,4 +147,59 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             "details": "This contain efficientnet result",
         }
 
+        return summary
+
+
+class XceptionNetFacialAnalyzer(FacialAnalyzer):
+
+    def __init__(self, model_name, device, weights_path=None):
+        """
+        Initialize facial analyzer.
+
+        Args:
+            model_name: 'xception' or 'mesonet' or 'efficientnet'
+            weights_path: Path to pretrained weights
+        """
+        super().__init__(model_name, weights_path)
+        self.device = device
+
+    def process(self, faces, model_cfg):
+        """
+        Analyze faces for deepfake detection.
+
+        Args:
+            faces: List of face images (cropped from video frames)
+
+        Returns:
+            dict: {
+                'score': float (0-1, higher = more likely fake),
+                'per_frame_scores': list of floats,
+                'details': str
+            }
+        """
+        summary = {
+            "score": 0.0,
+            "per_frame_score": [],
+            "details": "No face detected",
+        }
+        if not faces: 
+            return summary
+        
+        fake_count = 0
+        real_count = 0
+        scores = []
+        for face in faces: 
+            prediction, output = predict_with_model(face, self.model, cuda=cuda)
+            if prediction:
+                fake_count+=1
+            else: 
+                real_count+=1
+
+            scores.append(output.detach().cpu().numpy()[0][1]) # append fake score
+        
+        summary = {
+            "score": fake_count / (fake_count + real_count),
+            "per_frame_score": scores,
+            "details": "This contain xceptionnet result",
+        }
         return summary

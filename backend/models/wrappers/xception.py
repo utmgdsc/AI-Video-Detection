@@ -5,8 +5,15 @@ Team member: [YOUR NAME]
 Docs: docs/models/xception/
 """
 
+import sys
 import torch
 import torch.nn as nn
+from pathlib import Path
+
+model_path = (Path(__file__).resolve().parents[3]
+              / "backend/models/XceptionNet-Detector/Deepfake-Detection")
+sys.path.append(str(model_path))
+from detect_from_video import predict_with_model
 
 # TODO: Implement model loading
 # Reference your docs/models/xception/02-source-and-setup.md for setup instructions
