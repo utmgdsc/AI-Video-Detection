@@ -1,4 +1,4 @@
-# SCRUM-XX: Preprocessing Pipeline for XceptionNet
+# SCRUM-35: Preprocessing Pipeline for XceptionNet
 
 ## Dataset
 - Name: AIGVDBench
@@ -7,7 +7,7 @@
 - License: cc-by-4.0
 
 ## Storage Location
-- Path: /home/gdgteam1/AI-Video-Detection/backend/dataset/AIGVDBench
+- Path: AI-Video-Detection/backend/dataset/AIGVDBench
 - Access command:
 
 ```bash
@@ -46,7 +46,7 @@ python3 -c "from huggingface_hub import snapshot_download; snapshot_download(rep
 
 # Step 2: Split the dataset
 cd backend/dataset/AIGVDBench/AIGVDBench
-python3 split_videos_standard_split
+python3 split_videos_standard_split.py
 # or
 python3 split_videos_left_out_easyAnimate.py
 
@@ -55,7 +55,7 @@ cd backend/models/DeepFake-EfficientNet
 ./extract_face_efficientNet.sh
 
 # Step 4: Generate data list
-cd backend/models/XceptionNet/datalist.sh
+cd backend/models/XceptionNet-Detector/Deepfake-Detection
 ./datalist.sh
 ```
 
