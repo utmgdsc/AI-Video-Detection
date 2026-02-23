@@ -8,6 +8,7 @@ Based on content type, routes to:
 
 import sys
 from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
+from backend.handlers.facial_analyzer import XceptionNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
@@ -18,8 +19,9 @@ class VideoHandler:
 
     def __init__(self, device):
         """Initialize video handler with analyzers."""
-        # TODO: Add xceptionnet facial analyzer
-        # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
+        self.xceptionnet_facial_analyzer = XceptionNetFacialAnalyzer(
+            model_name="XceptionNet", device=device
+        )
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet", device=device
         )
