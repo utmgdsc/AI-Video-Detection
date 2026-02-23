@@ -17,7 +17,7 @@
 
 List exactly what you installed (with versions if possible):
 
-- OS: Windows 11
+- OS: Linux
 - Python: 3.6.13
 - PyTorch: Unused. Alternatively used TensorFlow and Keras
 - CUDA (if used):
@@ -69,6 +69,9 @@ Ensure the virtual environment is activated (The installation guide activates th
 # You can verify that the venv is activated by checking the Python version
 python --version
 # Expecting output similar to Python 3.6
+# Alternatively, if the environment directory 'mesonet' was installed in the directory '~/miniconda3/bin/conda',
+# running the activation script provided will activate it
+. activate_conda_env.sh
 
 python example.py
 # Runs the example provided by the original developers
