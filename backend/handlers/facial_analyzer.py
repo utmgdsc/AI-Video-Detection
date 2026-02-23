@@ -5,6 +5,7 @@ Uses XceptionNet and/or MesoNet for facial deepfake detection.
 """
 
 import torch
+import numpy as np
 
 # from scipy.special import softmax
 import torch.nn.functional as F
@@ -163,6 +164,46 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
         super().__init__(model_name, weights_path)
         self.device = device
 
+
+    def _to_bgr_numpy(self, face):
+        """
+        Ensure face is a numpy array in BGR order (H,W,3), uint8.
+        Accepts: numpy (BGR or RGB unknown), torch tensor (CHW), PIL image.
+        """
+        # torch Tensor -> numpy HWC
+        if isinstance(face, torch.Tensor):
+            x = face.detach().cpu()
+            # if CHW -> HWC
+            if x.ndim == 3 and x.shape[0] in (1, 3):
+                x = x.permute(1, 2, 0)
+            x = x.numpy()
+
+            # if float [0,1] -> uint8 [0,255]
+            if x.dtype != np.uint8:
+                x = (x * 255.0).clip(0, 255).astype(np.uint8)
+
+            # many pipelines store RGB; OpenCV expects BGR.
+            # If your upstream gives RGB, convert RGB->BGR:
+            if x.shape[-1] == 3:
+                x = x[..., ::-1]
+            return x
+
+        # PIL -> numpy RGB -> convert to BGR
+        if hasattr(face, "mode") and hasattr(face, "size"):
+            x = np.array(face)  # RGB
+            if x.ndim == 3 and x.shape[-1] == 3:
+                x = x[..., ::-1]  # RGB->BGR
+            return x.astype(np.uint8)
+
+        # numpy already
+        if isinstance(face, np.ndarray):
+            # ensure uint8
+            if face.dtype != np.uint8:
+                face = face.clip(0, 255).astype(np.uint8)
+            return face
+
+        raise TypeError(f"Unsupported face type: {type(face)}")
+
     def process(self, faces, model_cfg):
         """
         Analyze faces for deepfake detection.
@@ -185,12 +226,12 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
         if not faces: 
             return summary
         
-        use_cuda = (self.device.type == "cuda")
+        use_cuda = str(self.device).startswith("cuda")
         fake_count = 0
         real_count = 0
         scores = []
         for face in faces: 
-            prediction, output = predict_with_model(face, self.model, cuda=use_cuda)
+            prediction, output = predict_with_model(self._to_bgr_numpy(face), self.model, cuda=use_cuda)
             if prediction:
                 fake_count+=1
             else: 

@@ -22,9 +22,9 @@ class VideoHandler:
         self.xceptionnet_facial_analyzer = XceptionNetFacialAnalyzer(
             model_name="XceptionNet", device=device
         )
-        self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
-            model_name="EfficientNet", device=device
-        )
+        # self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
+        #     model_name="EfficientNet", device=device
+        # )
         # TODO: Add mesonet facial analyzer
         # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
@@ -56,8 +56,12 @@ class VideoHandler:
 
         # 3. If faces found, run facial analyzer
         if faces:
-            facial_score = self.efficientnet_facial_analyzer.process(
-                faces, models_cfg["efficientnet_b1"]
+            # facial_score = self.efficientnet_facial_analyzer.process(
+            #     faces, models_cfg["efficientnet_b1"]
+            # )
+            # logger.info(f"facial_score: {facial_score['score']}")
+            facial_score = self.xceptionnet_facial_analyzer.process(
+                faces, None
             )
             logger.info(f"facial_score: {facial_score['score']}")
 
