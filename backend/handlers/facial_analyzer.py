@@ -148,3 +148,21 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         }
 
         return summary
+
+
+class MesoNetFacialAnalyzer(FacialAnalyzer):
+
+    def process(self, faces, model_cfg):
+        # If no model is loaded, initialize one
+        if self.model is None:
+            self.load_model(model_cfg["weights_path"], None)
+            
+        results = self.model.process(faces) # We can set stop_server=False to keep the model active after the ensemble has terminated
+        
+        # TODO: Integrate mesonet results
+        summary = {
+            "score": None,
+            "per_frame_score": None,
+            "details": "MesoNet results not implemented.",
+        }
+        return summary
