@@ -155,7 +155,10 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
     def process(self, faces, model_cfg):
         # If no model is loaded, initialize one
         if self.model is None:
-            self.load_model(model_cfg["weights_path"], None)
+            weights_path = None
+            if "weights_path" in model_cfg:
+                weights_path = model_cfg["weights_path"]
+            self.load_model(weights_path, None)
             
         results = self.model.process(faces) # We can set stop_server=False to keep the model active after the ensemble has terminated
         
