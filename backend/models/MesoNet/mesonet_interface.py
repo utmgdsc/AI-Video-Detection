@@ -13,6 +13,7 @@ import subprocess
 import requests
 import numpy as np
 import time
+import os
 
 BASE_URL = "http://"  # + "127.0.0.1:8000" to form complete URL
 DEFAULT_HOST = "127.0.0.1"
@@ -28,6 +29,7 @@ DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
 class MesoNetClient:
 
     def __init__(self):
+        debug("Initializing new MesoNet Client")
         self.url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{DEFAULT_PORT}"
         self.host = DEFAULT_HOST
         self.port = DEFAULT_PORT
@@ -38,16 +40,19 @@ class MesoNetClient:
         self.ensure_server_running()
 
     def ensure_server_running(self):
+        debug("Checking server is running...")
         try:
+            debug("Sending test POST")
             response = requests.get(self.url + "/test_server", timeout=1)
-            assert response.json()["success"], "Server is not running."
+            assert response.status_code == 200, "Server is not running."
+            debug("Server is running.")
         except:
             print("Starting MesoNet server...")
             self.start_server()
             debug("Waiting until ready")
             self.wait_until_ready()
 
-    def start_server(self, save_log=False):
+    def start_server(self, save_log=True):
         output = subprocess.DEVNULL
         debug("Trying to open server log")
         if save_log:
@@ -64,6 +69,7 @@ class MesoNetClient:
                 "--host", f"{self.host}",
                 "--port", f"{self.port}"
             ],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
             stdout=output,
             stderr=output
         )
@@ -72,9 +78,10 @@ class MesoNetClient:
     def wait_until_ready(self):
         for _ in range(20):
             try:
+                debug("Testing connection...")
                 response = requests.get(self.url + "/test_server", timeout=1)
-                assert response.json()["success"], "Server is not running."
-                print("Server ready.")
+                assert response.status_code == 200, "Server is not running."
+                debug("Server ready.")
                 return
             except:
                 time.sleep(0.5)
@@ -93,6 +100,7 @@ class MesoNetClient:
     # =============== SERVER COMMUNICATION
 
     def load_model(self, weights_path=None):
+        debug("Asking server to load model...")
         architecture = DEFAULT_ARCHITECTURE
         if weights_path is None:
             weights_path = DEFAULT_WEIGHTS_PATH
@@ -104,10 +112,15 @@ class MesoNetClient:
                 "weights_path": weights_path
             }
         )
-        if response.json()["success"]:
+        debug(f"Load status: {response.status_code}")
+        debug(f"Load text: {response.text}")
+        if response.status_code == 200:
+            debug("Model loaded successfully.")
             return self
+        debug("Model failed to load.")
         # Else model failed to load
         return None
+        
 
     def process(self, faces, stop_server=True):
         """
@@ -125,13 +138,18 @@ class MesoNetClient:
             }
         """
         # Save faces to npy file
-        np.save("temp/faces.npy", faces)
+        
+        os.makedirs("backend/models/MesoNet/temp", exist_ok=True)
+        np.save("backend/models/MesoNet/temp/faces.npy", faces)
 
         # Send npy file path
         response = requests.post(
             self.url + "/process",
             json={"faces_path": "temp/faces.npy"}
         )
+        
+        debug(f"Process status: {response.status_code}")
+        debug(f"Process text: {response.text}")
         data = response.json()
 
         if stop_server:

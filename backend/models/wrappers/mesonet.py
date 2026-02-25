@@ -4,8 +4,16 @@ MesoNet model for deepfake detection.
 Team member: Frank Bi
 Docs: docs/models/mesonet/
 """
+import sys
+import os
 
-from models.MesoNet.mesonet_interface import MesoNetClient as MesoNetModel
+project_root = os.path.dirname(__file__)
+backend_path = os.path.abspath(os.path.join(project_root, ".."))
+
+if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
+
+from backend.models.MesoNet.mesonet_interface import MesoNetClient as MesoNetModel
 # Reference your docs/models/mesonet/02-source-and-setup.md for setup instructions
 
 

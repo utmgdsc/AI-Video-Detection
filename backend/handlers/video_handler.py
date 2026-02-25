@@ -7,7 +7,7 @@ Based on content type, routes to:
 """
 
 import sys
-from backend.handlers.facial_analyzer import FacialAnalyzer, EfficientNetFacialAnalyzer
+from backend.handlers.facial_analyzer import FacialAnalyzer, EfficientNetFacialAnalyzer, MesoNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
@@ -23,7 +23,7 @@ class VideoHandler:
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet", device=device
         )
-        self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5") # TODO: Change this to yaml? 
+        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5") # TODO: Change this to yaml? 
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
@@ -53,9 +53,9 @@ class VideoHandler:
 
         # 3. If faces found, run facial analyzer
         if faces:
-            facial_score = self.efficientnet_facial_analyzer.process(
-                faces, models_cfg["efficientnet_b1"]
-            )
+            # facial_score = self.efficientnet_facial_analyzer.process(
+            #     faces, models_cfg["efficientnet_b1"]
+            # )
             meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"]) # TODO: calling analyzer.process() or analyzer.model.process()?
             
             logger.info(f"facial_score: {facial_score['score']}")
