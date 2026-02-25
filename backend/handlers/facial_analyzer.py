@@ -15,8 +15,11 @@ from backend.models.DeepFake_EfficientNet.deepfake_detector.data import (
 )
 
 import logging
+import numpy as np
+import cv2
 
 logger = logging.getLogger(__name__)
+
 
 class FacialAnalyzer:
     def __init__(self, model_name, weights_path=None):
@@ -117,7 +120,8 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
                     face = face.permute(1, 2, 0).cpu().numpy()
                 transformed = transform(image=face)
                 image_tensor = transformed["image"]
-                probs = self.predict_single(self.model, image_tensor, self.device)
+                probs = self.predict_single(
+                    self.model, image_tensor, self.device)
 
                 fake_prob = probs[0]
                 real_prob = probs[1]
@@ -139,8 +143,10 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         if len(face_pred_result) == 0:
             return {}
 
-        real_count = sum(1 for r in face_pred_result if r["prediction"] == "real")
-        fake_count = sum(1 for r in face_pred_result if r["prediction"] == "fake")
+        real_count = sum(
+            1 for r in face_pred_result if r["prediction"] == "real")
+        fake_count = sum(
+            1 for r in face_pred_result if r["prediction"] == "fake")
         summary = {
             "score": fake_count / (fake_count + real_count),
             "per_frame_score": [x["confidence"] for x in face_pred_result],
@@ -159,9 +165,38 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
             if "weights_path" in model_cfg:
                 weights_path = model_cfg["weights_path"]
             self.load_model(weights_path, None)
-            
-        results = self.model.process(faces) # We can set stop_server=False to keep the model active after the ensemble has terminated
-        
+
+        if self.model is None:
+            summary = {}
+
+        processed_faces = []
+
+        for face in faces:
+            if torch.is_tensor(face):
+                # Convert from Torch Tensor GPU to CPU, then from Tensor to Numpy for Keras
+                face = face.cpu().numpy()
+
+            # If (3, 256, 256), we convert to (256, 256, 3)
+            if face.ndim == 3 and face.shape[-1] != 3:
+                face = np.transpose(face, (1, 2, 0))
+
+            # Resize to 256x256
+            face = cv2.resize(face, (256, 256))
+
+            # Convert to float32 for Keras
+            face = face.astype(np.float32)
+
+            # Normalize to [0,1] if needed
+            if face.max() > 1.0:
+                face = face / 255.0
+
+            processed_faces.append(face)
+
+        images = np.stack(processed_faces, axis=0)  # (N, 256, 256, 3)
+
+        # We can set stop_server=False to keep the model active after the ensemble has terminated
+        results = self.model.process(images)
+
         # TODO: Integrate mesonet results
         summary = {
             "score": None,
