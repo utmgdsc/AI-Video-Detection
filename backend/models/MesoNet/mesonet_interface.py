@@ -17,10 +17,12 @@ import time
 BASE_URL = "http://"  # + "127.0.0.1:8000" to form complete URL
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
-ENV_PATH = "$HOME/miniconda3/envs/mesonet/bin/python3"  # TODO: Path to Conda python.exe. Should not use abs path, but for now
-DEFAULT_ARCHITECTURE = "Meso4"
+# TODO: Path to Conda python.exe. Should not use abs path, but for now
+HOME_PATH = "/home/gdgteam1"
+ENV_PATH = HOME_PATH + "/miniconda3/envs/mesonet/bin/python3"
 
-# TODO: Parse through
+DEFAULT_ARCHITECTURE = "Meso4"
+DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
 
 
 class MesoNetClient:
@@ -42,14 +44,17 @@ class MesoNetClient:
         except:
             print("Starting MesoNet server...")
             self.start_server()
+            debug("Waiting until ready")
             self.wait_until_ready()
 
     def start_server(self, save_log=False):
         output = subprocess.DEVNULL
+        debug("Trying to open server log")
         if save_log:
             self.server_log = open("logs/meso_server.txt", "a")
             output = self.server_log
 
+        debug("Trying to run server")
         self.server_process = subprocess.Popen(
             [
                 self.env_path,
@@ -62,6 +67,7 @@ class MesoNetClient:
             stdout=output,
             stderr=output
         )
+        debug("Server started!")
 
     def wait_until_ready(self):
         for _ in range(20):
@@ -80,18 +86,16 @@ class MesoNetClient:
             self.server_process.terminate()
         if self.server_log is not None and not self.server_log.closed:
             self.server_log.close()
-    
+
     def __exit__(self, exc_type, exc, tb):
         self.stop_server()
 
     # =============== SERVER COMMUNICATION
 
-    def load_model(self, weights_path, model_config=None):
-
-        if model_config is not None:
-            architecture = model_config["architecture"]
-        else:
-            architecture = DEFAULT_ARCHITECTURE
+    def load_model(self, weights_path=None):
+        architecture = DEFAULT_ARCHITECTURE
+        if weights_path is None:
+            weights_path = DEFAULT_WEIGHTS_PATH
 
         response = requests.post(
             self.url + "/load_model",
@@ -105,7 +109,7 @@ class MesoNetClient:
         # Else model failed to load
         return None
 
-    def process(self, faces, model_cfg, stop_server=True):
+    def process(self, faces, stop_server=True):
         """
         Analyze faces for deepfake detection.
 
@@ -120,9 +124,6 @@ class MesoNetClient:
                 'details': str
             }
         """
-        # TODO: Refactor load_model to take only model config?
-        self.load_model(model_cfg["weights_path"], model_config=model_cfg)
-
         # Save faces to npy file
         np.save("temp/faces.npy", faces)
 
@@ -135,7 +136,32 @@ class MesoNetClient:
 
         if stop_server:
             self.stop_server()
-        
+
         if not data["success"]:
             return {}
         return data["predictions"]
+
+
+debug_num = 0
+
+
+def debug(msg):
+    global debug_num
+    print(f"DEBUG {debug_num} =====: {msg}")
+    debug_num += 1
+
+
+if __name__ == "__main__":
+    print("Begin testing for mesonet_interface.py")
+    # We are simulating calls that would be made from from mesonet.py
+    weights_path = "weights/Meso4_DF.h5"
+
+    print("\tTesting initialization:")
+    model = MesoNetClient()
+
+    print("\tTesting load_model:")
+    model.load_model(weights_path)
+
+    print("\tStopping server:")
+    model.stop_server()
+    print("End")

@@ -5,9 +5,7 @@ Team member: Frank Bi
 Docs: docs/models/mesonet/
 """
 
-# TODO: Check if this import works
 from models.MesoNet.mesonet_interface import MesoNetClient as MesoNetModel
-# TODO: Implement model loading
 # Reference your docs/models/mesonet/02-source-and-setup.md for setup instructions
 
 
@@ -24,6 +22,7 @@ def load_model(weights_path=None):
     """
     model = MesoNetModel()
     model.load_model(weights_path)
+    return model
 
 
 def predict(model, image):
@@ -41,7 +40,7 @@ def predict(model, image):
     raise NotImplementedError("Implement predict()")
 
 
-def process(model: MesoNetModel, faces, model_cfg):
+def process(faces, model_cfg):
     """
     Analyze faces for deepfake detection.
 
@@ -55,4 +54,8 @@ def process(model: MesoNetModel, faces, model_cfg):
             'details': str
         }
     """
-    return model.process(faces, model_cfg)
+    # TODO: Since MesoNetFacialAnalyzer calls self.model.process instead of mesonet.process(), this function never gets called
+    raise NotImplementedError("This function is not expected to be called.")
+    results = model.process(faces)
+    # TODO: Stop server?
+    return results
