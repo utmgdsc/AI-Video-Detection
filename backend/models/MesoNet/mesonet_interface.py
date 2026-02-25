@@ -15,6 +15,10 @@ import numpy as np
 import time
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
 BASE_URL = "http://"  # + "127.0.0.1:8000" to form complete URL
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -56,7 +60,7 @@ class MesoNetClient:
         output = subprocess.DEVNULL
         debug("Trying to open server log")
         if save_log:
-            self.server_log = open("logs/meso_server.txt", "a")
+            self.server_log = open(os.path.join(LOG_DIR, "meso_server.txt"), "a")
             output = self.server_log
 
         debug("Trying to run server")
@@ -69,7 +73,7 @@ class MesoNetClient:
                 "--host", f"{self.host}",
                 "--port", f"{self.port}"
             ],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
+            cwd=BASE_DIR,
             stdout=output,
             stderr=output
         )
@@ -139,8 +143,8 @@ class MesoNetClient:
         """
         # Save faces to npy file
         
-        os.makedirs("backend/models/MesoNet/temp", exist_ok=True)
-        np.save("backend/models/MesoNet/temp/faces.npy", faces)
+        os.makedirs(TEMP_DIR, exist_ok=True)
+        np.save(os.path.join(TEMP_DIR, "faces.npy"), faces)
 
         # Send npy file path
         response = requests.post(
