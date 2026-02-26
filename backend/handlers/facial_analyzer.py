@@ -159,6 +159,8 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
 class MesoNetFacialAnalyzer(FacialAnalyzer):
 
     def process(self, faces, model_cfg):
+        image_size = model_cfg["image_size"]
+
         # If no model is loaded, initialize one
         if self.model is None:
             weights_path = None
@@ -180,8 +182,8 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
             if face.ndim == 3 and face.shape[-1] != 3:
                 face = np.transpose(face, (1, 2, 0))
 
-            # Resize to 256x256
-            face = cv2.resize(face, (256, 256))
+            # Resize to expected size
+            face = cv2.resize(face, (image_size, image_size))
 
             # Convert to float32 for Keras
             face = face.astype(np.float32)
@@ -195,7 +197,8 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         images = np.stack(processed_faces, axis=0)  # (N, 256, 256, 3)
 
         # We can set stop_server=False to keep the model active after the ensemble has terminated
-        results = self.model.process(images)
+        results = self.model.process(images, stop_server=False)
+        results = 1 - results
 
         # TODO: Integrate mesonet results
         summary = {
@@ -204,3 +207,15 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
             "details": "MesoNet results not implemented.",
         }
         return summary
+
+    def cleanup(self):
+        """
+        Stops running the model when it is no longer needed.
+        """
+        if self.model is not None:
+            self.model.cleanup()
+        self.model = None
+
+    def __exit__(self, exc_type, exc, tb):
+        if self.model is not None:
+            self.model.cleanup()
