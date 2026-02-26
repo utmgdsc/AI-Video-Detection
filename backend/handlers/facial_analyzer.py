@@ -197,14 +197,18 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         images = np.stack(processed_faces, axis=0)  # (N, 256, 256, 3)
 
         # We can set stop_server=False to keep the model active after the ensemble has terminated
-        results = self.model.process(images, stop_server=False)
-        results = 1 - results
-
-        # TODO: Integrate mesonet results
+        results = self.model.process(images, stop_server=True)
+        results = np.array(results)
+        # MesoNet classes 1 as real and 0 as fake, so we flip the score
+        results = 1.0 - results
+        
+        fake_count = np.count_nonzero(results > model_cfg["threshold"])
+        total_faces = results.size
+        
         summary = {
-            "score": None,
-            "per_frame_score": None,
-            "details": "MesoNet results not implemented.",
+            "score": fake_count / total_faces,
+            "per_frame_score": results,
+            "details": "This contains MesoNet results.",
         }
         return summary
 

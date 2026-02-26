@@ -57,7 +57,7 @@ class VideoHandler:
             #     faces, models_cfg["efficientnet_b1"]
             # )
             meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
-            self.mesonet_facial_analyzer.cleanup()
+            print(f"FINAL: {meso_score}")
             
             logger.info(f"facial_score: {facial_score['score']}")
 
@@ -74,3 +74,7 @@ class VideoHandler:
         # TODO: Define combination strategy
         # Could be: average, weighted average, max, etc.
         raise NotImplementedError("Implement _combine_scores()")
+    
+    def __exit__(self, exc_type, exc, tb):
+        # On exit, stop MesoNet environment
+        self.mesonet_facial_analyzer.cleanup()
