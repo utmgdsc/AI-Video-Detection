@@ -9,12 +9,6 @@ Then through the MesoNetClient class, we make HTTP requests to the server endpoi
 the MesoNetClient saves information locally instead of packaging it up to be sent through a request.
 In doing so, this requires mesonet_interface.py and mesonet_server.py to be placed in the same directory,
 but the class can be imported anywhere.
-
-3.6 packages: TODO
-pip install fastapi==0.63.0 uvicorn==0.13.4
-
-3.10 packages: TODO
-pip install requests
 """
 
 import subprocess
@@ -30,7 +24,7 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 BASE_URL = "http://"  # + "127.0.0.1:8000" to form complete URL
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
-# TODO: Path to Conda python.exe. Should not use abs path, but for now
+# Path to Conda mesonet environment python.exe
 HOME_PATH = "/home/gdgteam1"
 ENV_PATH = HOME_PATH + "/miniconda3/envs/mesonet/bin/python3"
 

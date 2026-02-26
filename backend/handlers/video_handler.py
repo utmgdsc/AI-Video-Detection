@@ -23,7 +23,7 @@ class VideoHandler:
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet", device=device
         )
-        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5") # TODO: Change this to yaml? 
+        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5")
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
@@ -56,7 +56,7 @@ class VideoHandler:
             facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
             )
-            meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
+            mesonet_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
             
             logger.info(f"facial_score: {facial_score['score']}")
 
