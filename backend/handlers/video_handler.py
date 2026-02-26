@@ -53,11 +53,10 @@ class VideoHandler:
 
         # 3. If faces found, run facial analyzer
         if faces:
-            # facial_score = self.efficientnet_facial_analyzer.process(
-            #     faces, models_cfg["efficientnet_b1"]
-            # )
+            facial_score = self.efficientnet_facial_analyzer.process(
+                faces, models_cfg["efficientnet_b1"]
+            )
             meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
-            print(f"FINAL: {meso_score}")
             
             logger.info(f"facial_score: {facial_score['score']}")
 
