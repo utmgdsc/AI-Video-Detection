@@ -2,7 +2,6 @@ import numpy as np
 from fastapi import FastAPI
 from pydantic import BaseModel
 import tensorflow as tf
-import os
 
 from classifiers import *
 
@@ -88,6 +87,8 @@ def process(data: Process):
 
     debug(f"PREDICTIONS MADE, RETURNING RESULTS AS:")
     debug(f"{preds}")
+    
+    # TODO: Save preds as a file or send over as HTTP request
     return {"success": True,
             "predictions": preds}
 

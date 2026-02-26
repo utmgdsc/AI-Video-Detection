@@ -56,7 +56,8 @@ class VideoHandler:
             # facial_score = self.efficientnet_facial_analyzer.process(
             #     faces, models_cfg["efficientnet_b1"]
             # )
-            meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"]) # TODO: calling analyzer.process() or analyzer.model.process()?
+            meso_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
+            self.mesonet_facial_analyzer.cleanup()
             
             logger.info(f"facial_score: {facial_score['score']}")
 

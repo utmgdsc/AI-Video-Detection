@@ -1,12 +1,20 @@
 """
 Contains a class that mimics the functionalities of a PyTorch model.
 
+This model uses a different virtual environment in Python 3.6, which is different from the ensemble's 3.10.
+In order to communicate with the model, we start a separate process that runs MesoNet with the following command:
+(venv)/backend/.../MesoNet$ uvicorn mesonet_server:app --host 127.0.0.1 --port 8000
+
+Then through the MesoNetClient class, we make HTTP requests to the server endpoints. To be more efficient,
+the MesoNetClient saves information locally instead of packaging it up to be sent through a request.
+In doing so, this requires mesonet_interface.py and mesonet_server.py to be placed in the same directory,
+but the class can be imported anywhere.
+
 3.6 packages: TODO
 pip install fastapi==0.63.0 uvicorn==0.13.4
 
 3.10 packages: TODO
 pip install requests
-uvicorn mesonet_server:app --host 127.0.0.1 --port 8000
 """
 
 import subprocess
@@ -134,7 +142,7 @@ class MesoNetClient:
             faces: List of face images (cropped from video frames)
             model_cfg: Dictionary of parameters defined in ensemble.yaml for this model
 
-        Returns: TODO: Change the return type? Or format correctly?
+        Returns:
             dict: {
                 'score': float (0-1, higher = more likely fake),
                 'per_frame_scores': list of floats,
@@ -162,6 +170,9 @@ class MesoNetClient:
         if not data["success"]:
             return {}
         return data["predictions"]
+    
+    def cleanup(self):
+        self.stop_server()
 
 
 debug_num = 0
