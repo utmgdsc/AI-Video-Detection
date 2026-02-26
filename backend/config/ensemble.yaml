@@ -40,5 +40,10 @@ models:
   xceptionnet:
 
   mesonet:
+    active: true
+    # architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4" # Not implemented
+    # weights_path: "weights/Meso4_custom_weight1_epoch7.h5" # weights directory located in ./backend/models/MesoNet
+    image_size: 256
+    threshold: 0.5
 
   aasist:

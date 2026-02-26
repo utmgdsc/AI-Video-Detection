@@ -7,7 +7,7 @@ Based on content type, routes to:
 """
 
 import sys
-from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
+from backend.handlers.facial_analyzer import FacialAnalyzer, EfficientNetFacialAnalyzer, MesoNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
@@ -23,8 +23,7 @@ class VideoHandler:
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet", device=device
         )
-        # TODO: Add mesonet facial analyzer
-        # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
+        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5")
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
@@ -57,6 +56,8 @@ class VideoHandler:
             facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
             )
+            mesonet_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
+            
             logger.info(f"facial_score: {facial_score['score']}")
 
         # 4. Run image analyzer on frames
@@ -72,3 +73,7 @@ class VideoHandler:
         # TODO: Define combination strategy
         # Could be: average, weighted average, max, etc.
         raise NotImplementedError("Implement _combine_scores()")
+    
+    def __exit__(self, exc_type, exc, tb):
+        # On exit, stop MesoNet environment
+        self.mesonet_facial_analyzer.cleanup()

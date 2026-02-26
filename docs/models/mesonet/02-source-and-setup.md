@@ -29,6 +29,11 @@ List exactly what you installed (with versions if possible):
     * CMake 3.28.4
     * DLib 19.22.0
     * H5py 2.10.0
+- Deps for ensemble integration (installed in the current environment, Python 3.6):
+    * fastapi 0.63.0
+    * uvicorn 0.13.4
+- Ensemble deps (installed on the ensemble environment, Python 3.10)
+    * requests 2.25.1
 
 ## Setup steps (copy/paste friendly)
 Due to the legacy software MesoNet relies on, Conda 25.7.0 was used to manage the virtual environment.
@@ -55,6 +60,16 @@ conda install ffmpeg=4.3.1 -c conda-forge
 ```
 Note: imports and some parameter names were modified in this repository to support newer libraries
 
+If using MesoNet through the ensemble, install the following:
+```bash
+# On the mesonet environment
+pip install fastapi==0.63.0 uvicorn==0.13.4
+```
+```bash
+# On the ensemble environment
+pip install requests 2.25.1
+```
+
 ### 2) Any downloads needed (weights/datasets)
 
 - What to download:
@@ -75,6 +90,18 @@ python --version
 
 python example.py
 # Runs the example provided by the original developers
+```
+
+If running through the ensemble, then on the ensemble environment:
+```bash
+# Activate the ensemble virtual environment, if not already activated
+source venv/bin/activate
+# (venv) should appear before the prompt: "(venv) user/.../AI-Video-Detection$"
+# Then in the repository directory, running the command will make a prediction on the given video
+python3 -m backend.main --input-dir "./backend/dataset/FaceForensics++/original/002.mp4"
+
+# Alternatively, in the directory "/AI-Video-Detection/backend/models/MesoNet", we can run a test script for the ensemble connection
+python3 mesonet_interface.py
 ```
 
 ## Output / results
@@ -117,6 +144,59 @@ Real class : [1. 0. 1. 0.]
 * If test_images is empty of any images then example.py will not run. Steps 2 and 3 must be removed in order to predict videos.
 * The fake video received a score of 0.93, but was expected to be lower than 0.5. Possible causes are higher version incompatibility, or newer DeepFake videos are too sophisticated for older MesoNet models.
 
+If running through the ensemble, then server logs will be appended to the end of a text file located at "/AI-Video-Detection/backend/models/MesoNet/logs/meso_server.txt". A sample output for the meso_server.txt is provided for the example command:
+`(venv) user:~/AI-Video-Detection$ python3 -m backend.main --input-dir "./backend/dataset/FaceForensics++/original/002.mp4"`
+```bash
+Using TensorFlow backend.
+INFO:     Started server process [2793898]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+SERVER 0 =====: Writing test message to log (from mesonet_interface.py test_server(), expected in logs/meso_server.txt)
+INFO:     127.0.0.1:52144 - "GET /test_server HTTP/1.1" 200 OK
+SERVER 1 =====: Clearing previous model session (no affect if no models were loaded before).
+SERVER 2 =====: Selecting architecture: 'Meso4'
+2026-02-26 14:21:25.159637: I tensorflow/core/platform/cpu_feature_guard.cc:140] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+SERVER 3 =====: Loading weight on path: 'weights/Meso4_custom_weight1_epoch7.h5'
+SERVER 4 =====: MODEL SUCCESSFULLY LOADED.
+INFO:     127.0.0.1:52156 - "POST /load_model HTTP/1.1" 200 OK
+SERVER 5 =====: Loading images from faces file: 'temp/faces.npy'
+SERVER 6 =====: Normalizing images, if not already normalized.
+SERVER 7 =====: BEGIN MAKING PREDICTIONS...
+SERVER 8 =====: PREDICTIONS MADE, RETURNING RESULTS AS:
+SERVER 9 =====: [[1.0], [1.0], [0.9999998807907104], [1.0], [1.0], [0.9999985694885254], [1.0], [0.9999997615814209], [1.0], [0.9999998807907104], [0.9999998807907104], [1.0], [1.0], [0.9999998807907104], [1.0], [1.0]]
+INFO:     127.0.0.1:52166 - "POST /process HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2793898]
+
+```
+In the ensemble environment, the following is expected (assuming only MesoNet is connected)
+```bash
+2026-02-26 14:21:23,077 - INFO - Initializing MTCNN...
+2026-02-26 14:21:23,734 - INFO - frame extracted
+2026-02-26 14:21:24,133 - INFO - faces detected
+DEBUG 0 =====: Initializing new MesoNet Client
+DEBUG 1 =====: Checking server is running...
+DEBUG 2 =====: Sending test POST
+Starting MesoNet server...
+DEBUG 3 =====: Trying to open server log
+DEBUG 4 =====: Trying to run server
+DEBUG 5 =====: Server started!
+DEBUG 6 =====: Waiting until ready
+DEBUG 7 =====: Testing connection...
+DEBUG 8 =====: Testing connection...
+DEBUG 9 =====: Testing connection...
+DEBUG 10 =====: Server ready.
+DEBUG 11 =====: Asking server to load model...
+DEBUG 12 =====: Load status: 200
+DEBUG 13 =====: Load text: {"success":true}
+DEBUG 14 =====: Model loaded successfully.
+DEBUG 15 =====: Process status: 200
+DEBUG 16 =====: Process text: {"success":true,"predictions":[[1.0],[1.0],[0.9999998807907104],[1.0],[1.0],[0.9999985694885254],[1.0],[0.9999997615814209],[1.0],[0.9999998807907104],[0.9999998807907104],[1.0],[1.0],[0.9999998807907104],[1.0],[1.0]]}
+```
+
 ## Issues encountered + fixes
 
 - Issue: Imports and some parameter names were modified
@@ -126,6 +206,12 @@ Real class : [1. 0. 1. 0.]
     * Different Parameters in classifiers.py:
         * For calls to LeakyReLU(), replace negative_slope with alpha (two occurances)
         * For calls to Adam(), replace learning_rate with lr (three occurances)
+
+- Issue: In certain situations, the ensemble will fail due to a pre-existing running server.
+- Cause: Another program is using the port, or the MesoNet server was started but never stopped.
+- Fix (steps/commands):
+    * Identify the server using `ps aux | grep uvicorn`
+    * Kill the process with `kill [pid of the server]`
 
 ## Notes for teammates
 
