@@ -60,15 +60,22 @@ class VideoHandler:
             logger.info(f"facial_score: {facial_score['score']}")
 
         # 4. Run image analyzer on frames
-        image_score = self.image_analyzer.process(frames)
+        # TO-DOs: implement general AI video detection
+        # image_score = self.image_analyzer.process(frames)
 
         # 5. Combine scores
-        combined = self._combine_scores(facial_score, image_score)
+        combined_score = self._combine_scores(facial_score["score"], 0)
+        combined_score_dict = {
+            "facial_score": facial_score["score"],
+            "image_score": 0,
+            "combined_score": combined_score,
+            "details": "This is the dictionary for all scores",
+        }
 
-        raise NotImplementedError("Implement process()")
+        return combined_score_dict
 
     def _combine_scores(self, facial_score, image_score):
         """Combine scores from different analyzers."""
         # TODO: Define combination strategy
         # Could be: average, weighted average, max, etc.
-        raise NotImplementedError("Implement _combine_scores()")
+        return max(facial_score, image_score)

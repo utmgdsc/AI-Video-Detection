@@ -20,6 +20,9 @@ datasets:
   LAV-DF:
     dataset_path:
     example_video_path:
+  FakeAVCeleb:
+    dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
+    example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/RealVideo-RealAudio/African/men/id00076/00109.mp4"
 
 # Individual Model Configurations
 models:
@@ -27,7 +30,7 @@ models:
   efficientnet_b1:
     active: true
     architecture: "efficientnet_b1"
-    weights_path: "./backend/models/DeepFake_EfficientNet/outputs/checkpoints/best_model.pth"
+    weights_path: "./backend/models/DeepFake_EfficientNet/faceforensic_output/outputs/checkpoints/best_model.pth"
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5
