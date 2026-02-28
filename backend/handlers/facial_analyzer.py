@@ -218,6 +218,8 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
                 'details': str
             }
         """
+        if self.model is None:
+            self.load_model(model_cfg["weights_path"], self.device)
         summary = {
             "score": 0.0,
             "per_frame_score": [],

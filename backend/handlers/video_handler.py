@@ -61,7 +61,7 @@ class VideoHandler:
             # )
             # logger.info(f"facial_score: {facial_score['score']}")
             facial_score = self.xceptionnet_facial_analyzer.process(
-                faces, None
+                faces, models_cfg["xceptionnet"]
             )
             logger.info(f"facial_score: {facial_score['score']}")
 
