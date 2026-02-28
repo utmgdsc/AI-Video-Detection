@@ -167,7 +167,7 @@ def main():
     if args.input_dir:
         video_path = args.input_dir
     else:
-        video_path = cfg["datasets"]["faceforensic"]["example_video_path"]
+        video_path = cfg["datasets"]["FakeAVCeleb"]["example_video_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
     result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
