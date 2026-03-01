@@ -59,6 +59,7 @@ class VideoHandler:
 
             efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
+            )
 
             xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
                 faces, models_cfg["xceptionnet"]
@@ -73,7 +74,7 @@ class VideoHandler:
                 f"efficientnet facial_score: {efficientnet_facial_score['score']}"
             )
             
-            logger.info(f"facial_score: {facial_score['score']}")
+            # logger.info(f"facial_score: {facial_score['score']}")
 
             # 4. Run image analyzer on frames
             # TO-DOs: implement general AI video detection
@@ -82,8 +83,8 @@ class VideoHandler:
             # 5. Combine scores
             combined_score = self._combine_scores(
                 efficientnet_facial_score["score"],
-                mesonet_facial_score,
-                xceptionnet_facial_score,
+                mesonet_facial_score["score"],
+                xceptionnet_facial_score["score"],
             )
             combined_score_dict = {
                 "facial_score": combined_score,
