@@ -53,5 +53,6 @@ models:
     # weights_path: "Meso4_DF.h5"           # TODO: turn into "weight" instead of path?
     image_size: 256
     threshold: 0.5
+    ports: 8001
 
   aasist:
