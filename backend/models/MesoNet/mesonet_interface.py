@@ -37,6 +37,8 @@ ENV_PATH = HOME_PATH + "/miniconda3/envs/mesonet/bin/python3"
 DEFAULT_ARCHITECTURE = "Meso4"
 DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
 
+faces_save_file_name = f"faces-port-{DEFAULT_PORT}.npy"
+faces_save_path = os.path.join(TEMP_DIR, faces_save_file_name)
 
 class MesoNetClient:
 
@@ -68,7 +70,7 @@ class MesoNetClient:
         output = subprocess.DEVNULL
         debug("Trying to open server log")
         if save_log:
-            self.server_log = open(os.path.join(LOG_DIR, "meso_server.txt"), "a")
+            self.server_log = open(os.path.join(LOG_DIR, f"meso_server-port-{DEFAULT_PORT}.txt"), "a")
             output = self.server_log
 
         debug("Trying to run server")
@@ -152,12 +154,12 @@ class MesoNetClient:
         # Save faces to npy file
         
         os.makedirs(TEMP_DIR, exist_ok=True)
-        np.save(os.path.join(TEMP_DIR, "faces.npy"), faces)
+        np.save(faces_save_path, faces)
 
         # Send npy file path
         response = requests.post(
             self.url + "/process",
-            json={"faces_path": "temp/faces.npy"}
+            json={"faces_path": faces_save_path}
         )
         
         debug(f"Process status: {response.status_code}")
@@ -179,9 +181,10 @@ debug_num = 0
 
 
 def debug(msg):
-    global debug_num
-    print(f"DEBUG {debug_num} =====: {msg}")
-    debug_num += 1
+    # global debug_num
+    # print(f"DEBUG {debug_num} =====: {msg}")
+    # debug_num += 1
+    pass
 
 
 if __name__ == "__main__":
