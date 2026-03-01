@@ -139,10 +139,11 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         if len(face_pred_result) == 0:
             return {}
 
-        real_count = sum(1 for r in face_pred_result if r["prediction"] == "real")
-        fake_count = sum(1 for r in face_pred_result if r["prediction"] == "fake")
+        avg_fake_score = sum(r["fake_prob"] for r in face_pred_result) / len(
+            face_pred_result
+        )
         summary = {
-            "score": fake_count / (fake_count + real_count),
+            "score": avg_fake_score,
             "per_frame_score": [x["confidence"] for x in face_pred_result],
             "details": "This contain efficientnet result",
         }

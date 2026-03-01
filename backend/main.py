@@ -16,6 +16,8 @@ from facenet_pytorch import MTCNN
 import torch
 import argparse
 import yaml
+import pandas as pd
+import re
 
 from backend.handlers.audio_handler import AudioHandler
 from backend.handlers.video_handler import VideoHandler
@@ -71,6 +73,7 @@ class DeepfakeDetector:
             "video_score": None,
             "is_fake": False,
             "confidence": 0.0,
+            "individual_prediction": {},
             "details": "",
         }
 
@@ -81,6 +84,11 @@ class DeepfakeDetector:
             separate_audio(video_path, audio_path)
             audio_result = self.audio_handler.process(audio_path)
             results["audio_score"] = audio_result["score"]
+            results["individual_prediction"]["aasist_prediction"] = (
+                True
+                if audio_result["score"] > 0.5
+                else False
+            )
             os.unlink(audio_path)  # Clean up temp file
         except Exception as e:
             results["details"] += f"Audio analysis skipped: {e}\n"
@@ -96,6 +104,21 @@ class DeepfakeDetector:
                 sample_rate=frame_skip,
             )
             results["video_score"] = video_result["combined_score"]
+            results["individual_prediction"]["efficientnet_prediction"] = (
+                True
+                if video_result["individual_scores"]["efficientnet_score"] > 0.5
+                else False
+            )
+            results["individual_prediction"]["mesonet_prediction"] = (
+                True
+                if video_result["individual_scores"]["mesonet_score"] > 0.5
+                else False
+            )
+            results["individual_prediction"]["xceptionnet_prediction"] = (
+                True
+                if video_result["individual_scores"]["xceptionnet_score"] > 0.5
+                else False
+            )
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
             raise
@@ -119,9 +142,51 @@ class DeepfakeDetector:
 
         # Simple average for now
         # TODO: Experiment with weighted combinations
-        #will do this once Mesonet + Xception are integrated
+        # will do this once Mesonet + Xception are integrated
         return (audio_score + video_score) / 2
 
+
+def get_video_ground_truth(df, full_video_path):
+
+    # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
+    filename = os.path.basename(full_video_path)
+
+    # 2. Strip custom prefixes like 'FvFa_', 'RvFa_', etc., if they exist
+    # This turns 'FvFa_00004_fake.mp4' back into '00004_fake.mp4'
+    clean_filename = re.sub(r"^(FvFa|FvRa|RvFa|RvRa)_", "", filename)
+
+    # 3. Search for this clean filename in the CSV's 'path' column
+    matches = df[df["path"] == clean_filename]
+
+    if matches.empty:
+        return {"error": f"Video {clean_filename} not found in metadata"}
+
+    # Note: If the filename is '00109.mp4', matches might contain 5 rows
+    # (because 5 different people have a real video named 00109.mp4).
+    # Since they are ALL real videos, it's perfectly safe to just grab the first one.
+    video_type = matches.iloc[0]["type"]
+
+    return ("FakeVideo" in video_type, "FakeAudio" in video_type)
+
+
+def print_output(result, video_idx):
+    logger.info(f"==================================")
+    logger.info(f"Video {video_idx}")
+    logger.info(f"Is Fake: {result['is_fake']}")
+    logger.info(f"Confidence: {result['confidence']:.2%}")
+    logger.info(f"Audio Score: {result['audio_score']}")
+    logger.info(f"Video Score: {result['video_score']}")
+    logger.info(f"Details: {result['details']}")
+    logger.info(f"==================================")
+
+def print_accuracy(models_correct_prediction, total_videos):
+    logger.info(f"==================================")
+    logger.info(f"EfficientNet accuracy: {models_correct_prediction["efficientnet_correct_prediction"]/total_videos}")
+    logger.info(f"MesoNet accuracy: {models_correct_prediction["mesonet_correct_prediction"]/total_videos}")
+    logger.info(f"XeceptionNet accuracy: {models_correct_prediction["xeceptionnet_correct_prediction"]/total_videos}")
+    logger.info(f"AAsist accuracy: {models_correct_prediction["aasist_correct_prediction"]/total_videos}")
+    logger.info(f"Ensemble accuracy: {models_correct_prediction["ensemble_correct_prediction"]/total_videos}")
+    logger.info(f"==================================")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -165,19 +230,51 @@ def main():
     )
 
     if args.input_dir:
-        video_path = args.input_dir
+        input_path = args.input_dir
     else:
-        video_path = cfg["datasets"]["FakeAVCeleb"]["example_video_path"]
+        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
-    result = detector.analyze(video_path, mtcnn, cfg["batch_size"], cfg["frame_skip"])
+    if os.path.isfile(input_path):
+        result = detector.analyze(
+            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+        )
+    elif os.path.isdir(input_path):
+        # load fakeavceleb metadata
+        df = pd.read_csv(cfg["datasets"]["FakeAVCeleb"]["metadata"])
 
-    logger.info(f"Is Fake: {result['is_fake']}")
-    logger.info(f"Confidence: {result['confidence']:.2%}")
-    logger.info(f"Audio Score: {result['audio_score']}")
-    logger.info(f"Video Score: {result['video_score']}")
-    logger.info(f"Details: {result['details']}")
+        # rename missing column
+        df = df.rename(columns={"Unnamed: 9": "folder_path"})
 
-
+        models_correct_prediction = {
+            "efficientnet_correct_prediction": 0,
+            "mesonet_correct_prediction": 0,
+            "xeceptionnet_correct_prediction": 0,
+            "aasist_correct_prediction": 0,
+            "ensemble_correct_prediction": 0,
+        }
+        for idx, video_path in enumerate(os.listdir(input_path)):
+            full_path = os.path.join(input_path, video_path)
+            result = detector.analyze(
+                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+            )
+            # print result for one video
+            print_output(result, idx)
+            if cfg["compare_baseline_accuracy"]:
+                ground_truth_video, ground_truth_audio = get_video_ground_truth(
+                    df, full_path
+                )
+                if result["individual_scores"]["efficientnet_score"]== ground_truth_video:
+                    models_correct_prediction["efficientnet_correct_prediction"] += 1
+                if result["individual_scores"]["mesonet_prediction"] == ground_truth_video:
+                    models_correct_prediction["mesonet_correct_prediction"] += 1
+                if result["individual_scores"]["xceptionnet_prediction"] == ground_truth_video:
+                    models_correct_prediction["xeceptionnet_correct_prediction"] += 1
+                if result["individual_scores"]["aasist_score"] == ground_truth_audio:
+                    models_correct_prediction["aasist_correct_prediction"] += 1
+                if result["is_fake"] != ground_truth_audio and result["is_fake"] != ground_truth_video:
+                    models_correct_prediction["ensemble_correct_prediction"] += 1
+                                    
+        print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
 if __name__ == "__main__":
     main()
