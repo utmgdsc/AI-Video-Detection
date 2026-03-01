@@ -63,31 +63,44 @@ class VideoHandler:
             mesonet_facial_score = random.random()
             xceptionnet_facial_score = random.random()
             individual_scores = {
-                "efficientnet_score": efficientnet_facial_score,
+                "efficientnet_score": efficientnet_facial_score['score'],
                 "mesonet_score": mesonet_facial_score,
-                "xceptionnet_facial_score": xceptionnet_facial_score,
+                "xceptionnet_score": xceptionnet_facial_score,
             }
             logger.info(
                 f"efficientnet facial_score: {efficientnet_facial_score['score']}"
             )
 
-        # 4. Run image analyzer on frames
-        # TO-DOs: implement general AI video detection
-        # image_score = self.image_analyzer.process(frames)
+            # 4. Run image analyzer on frames
+            # TO-DOs: implement general AI video detection
+            # image_score = self.image_analyzer.process(frames)
 
-        # 5. Combine scores
-        combined_score = self._combine_scores(
-            efficientnet_facial_score["score"],
-            mesonet_facial_score,
-            xceptionnet_facial_score,
-        )
-        combined_score_dict = {
-            "facial_score": combined_score["score"],
-            "image_score": 0,
-            "combined_score": combined_score,
-            "individual_scores": individual_scores,
-            "details": "This is the dictionary for all scores",
-        }
+            # 5. Combine scores
+            combined_score = self._combine_scores(
+                efficientnet_facial_score["score"],
+                mesonet_facial_score,
+                xceptionnet_facial_score,
+            )
+            combined_score_dict = {
+                "facial_score": combined_score,
+                "image_score": 0,
+                "combined_score": combined_score,
+                "individual_scores": individual_scores,
+                "details": "This is the dictionary for all scores",
+            }
+        else:
+            # no face detected
+            combined_score_dict = {
+                "facial_score": 0,
+                "image_score": 0,
+                "combined_score": 0,
+                "individual_scores": {
+                    "efficientnet_score": 0,
+                    "mesonet_score": 0,
+                    "xceptionnet_score": 0,
+                },
+                "details": "This is the dictionary for all scores",
+            }
 
         return combined_score_dict
 
