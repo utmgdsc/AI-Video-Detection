@@ -48,5 +48,10 @@ models:
     weights_path: "./backend/models/XceptionNet-Detector/Deepfake-Detection/output/xception_ff23/best.pkl"
 
   mesonet:
+    active: false
+    # architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
+    # weights_path: "Meso4_DF.h5"           # TODO: turn into "weight" instead of path?
+    image_size: 256
+    threshold: 0.5
 
   aasist:
