@@ -8,8 +8,7 @@ Based on content type, routes to:
 
 import sys
 import random
-from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
-from backend.handlers.facial_analyzer import XceptionNetFacialAnalyzer
+from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer, MesoNetFacialAnalyzer, XceptionNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
@@ -23,11 +22,10 @@ class VideoHandler:
         self.xceptionnet_facial_analyzer = XceptionNetFacialAnalyzer(
             model_name="XceptionNet", device=device
         )
-        # self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
-        #     model_name="EfficientNet", device=device
-        # )
-        # TODO: Add mesonet facial analyzer
-        # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
+        self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
+            model_name="EfficientNet", device=device
+        )
+        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5") # TODO: Change this to yaml? 
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
@@ -65,15 +63,17 @@ class VideoHandler:
             xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
                 faces, models_cfg["xceptionnet"]
             )
-            mesonet_facial_score = random.random()
+            mesonet_facial_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
             individual_scores = {
                 "efficientnet_score": efficientnet_facial_score['score'],
-                "mesonet_score": mesonet_facial_score,
-                "xceptionnet_score": xceptionnet_facial_score,
+                "mesonet_score": mesonet_facial_score['score'],
+                "xceptionnet_score": xceptionnet_facial_score['score'],
             }
             logger.info(
                 f"efficientnet facial_score: {efficientnet_facial_score['score']}"
             )
+            
+            logger.info(f"facial_score: {facial_score['score']}")
 
             # 4. Run image analyzer on frames
             # TO-DOs: implement general AI video detection
@@ -120,3 +120,7 @@ class VideoHandler:
             + mesonet_facial_score * (1 / 3)
             + xceptionnet_facial_score * (1 / 3)
         )
+    
+    def __exit__(self, exc_type, exc, tb):
+        # On exit, stop MesoNet environment
+        self.mesonet_facial_analyzer.cleanup()
