@@ -61,7 +61,7 @@ class DeepfakeDetector:
 
         Returns:
             dict: {
-                'is_fake': bool,
+                'is_real': bool,
                 'confidence': float,
                 'audio_score': float or None,
                 'video_score': float,
@@ -71,7 +71,7 @@ class DeepfakeDetector:
         results = {
             "audio_score": None,
             "video_score": None,
-            "is_fake": False,
+            "is_real": False,
             "confidence": 0.0,
             "individual_prediction": {},
             "details": "",
@@ -105,19 +105,19 @@ class DeepfakeDetector:
             )
             results["video_score"] = video_result["combined_score"]
             results["individual_prediction"]["efficientnet_prediction"] = (
-                True
+                False
                 if video_result["individual_scores"]["efficientnet_score"] > 0.5
-                else False
+                else True
             )
             results["individual_prediction"]["mesonet_prediction"] = (
-                True
+                False
                 if video_result["individual_scores"]["mesonet_score"] > 0.5
-                else False
+                else True
             )
             results["individual_prediction"]["xceptionnet_prediction"] = (
-                True
+                False
                 if video_result["individual_scores"]["xceptionnet_score"] > 0.5
-                else False
+                else True
             )
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
@@ -127,7 +127,7 @@ class DeepfakeDetector:
         results["confidence"] = self._combine_scores(
             results["audio_score"], results["video_score"]
         )
-        results["is_fake"] = results["confidence"] > 0.5
+        results["is_real"] = results["confidence"] < 0.5
 
         return results
 
@@ -166,13 +166,13 @@ def get_video_ground_truth(df, full_video_path):
     # Since they are ALL real videos, it's perfectly safe to just grab the first one.
     video_type = matches.iloc[0]["type"]
 
-    return ("FakeVideo" in video_type, "FakeAudio" in video_type)
+    return ("FakeVideo" not in video_type, "FakeAudio" not in video_type)
 
 
 def print_output(result, video_idx):
     logger.info(f"==================================")
     logger.info(f"Video {video_idx}")
-    logger.info(f"Is Fake: {result['is_fake']}")
+    logger.info(f"Is Real: {result['is_real']}")
     logger.info(f"Confidence: {result['confidence']:.2%}")
     logger.info(f"Audio Score: {result['audio_score']}")
     logger.info(f"Video Score: {result['video_score']}")
@@ -273,8 +273,11 @@ def main():
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
                 if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
                     models_correct_prediction["aasist_correct_prediction"] += 1
-                if result["is_fake"] != ground_truth_audio and result["is_fake"] != ground_truth_video:
+                if (result["is_real"] == ground_truth_audio) and (result["is_real"] == ground_truth_video):
                     models_correct_prediction["ensemble_correct_prediction"] += 1
+                if ground_truth_video != True:
+                    logger.info("ground truth is wrong")
+                    sys.exit()
                                     
         print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
 if __name__ == "__main__":
