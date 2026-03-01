@@ -181,13 +181,13 @@ def print_output(result, video_idx):
 
 def print_accuracy(models_correct_prediction, total_videos):
     logger.info(f"==================================")
-    logger.info(f"EfficientNet accuracy: {models_correct_prediction["efficientnet_correct_prediction"]/total_videos}")
-    logger.info(f"MesoNet accuracy: {models_correct_prediction["mesonet_correct_prediction"]/total_videos}")
-    logger.info(f"XeceptionNet accuracy: {models_correct_prediction["xeceptionnet_correct_prediction"]/total_videos}")
-    logger.info(f"AAsist accuracy: {models_correct_prediction["aasist_correct_prediction"]/total_videos}")
-    logger.info(f"Ensemble accuracy: {models_correct_prediction["ensemble_correct_prediction"]/total_videos}")
+    logger.info(f"EfficientNet accuracy: {models_correct_prediction['efficientnet_correct_prediction']/total_videos}")
+    logger.info(f"MesoNet accuracy: {models_correct_prediction['mesonet_correct_prediction']/total_videos}")
+    logger.info(f"XeceptionNet accuracy: {models_correct_prediction['xeceptionnet_correct_prediction']/total_videos}")
+    logger.info(f"AAsist accuracy: {models_correct_prediction['aasist_correct_prediction']/total_videos}")
+    logger.info(f"Ensemble accuracy: {models_correct_prediction['ensemble_correct_prediction']/total_videos}")
     logger.info(f"==================================")
-
+    
 def main():
     parser = argparse.ArgumentParser(
         description="Extract faces from videos and images using MTCNN",
@@ -232,13 +232,14 @@ def main():
     if args.input_dir:
         input_path = args.input_dir
     else:
-        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_path"]
+        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
     if os.path.isfile(input_path):
         result = detector.analyze(
             input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
         )
+        print_output(result, 0)
     elif os.path.isdir(input_path):
         # load fakeavceleb metadata
         df = pd.read_csv(cfg["datasets"]["FakeAVCeleb"]["metadata"])
@@ -264,13 +265,13 @@ def main():
                 ground_truth_video, ground_truth_audio = get_video_ground_truth(
                     df, full_path
                 )
-                if result["individual_scores"]["efficientnet_score"]== ground_truth_video:
+                if result["individual_prediction"]["efficientnet_prediction"] == ground_truth_video:
                     models_correct_prediction["efficientnet_correct_prediction"] += 1
-                if result["individual_scores"]["mesonet_prediction"] == ground_truth_video:
+                if result["individual_prediction"]["mesonet_prediction"] == ground_truth_video:
                     models_correct_prediction["mesonet_correct_prediction"] += 1
-                if result["individual_scores"]["xceptionnet_prediction"] == ground_truth_video:
+                if result["individual_prediction"]["xceptionnet_prediction"] == ground_truth_video:
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
-                if result["individual_scores"]["aasist_score"] == ground_truth_audio:
+                if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
                     models_correct_prediction["aasist_correct_prediction"] += 1
                 if result["is_fake"] != ground_truth_audio and result["is_fake"] != ground_truth_video:
                     models_correct_prediction["ensemble_correct_prediction"] += 1
