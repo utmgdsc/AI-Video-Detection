@@ -293,7 +293,7 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         images = np.stack(processed_faces, axis=0)  # (N, 256, 256, 3)
 
         # We can set stop_server=False to keep the model active after the ensemble has terminated
-        results = self.model.process(images, stop_server=True)
+        results = self.model.process(images, stop_server=False)
         results = np.array(results)
         # MesoNet classes 1 as real and 0 as fake, so we flip the score
         results = 1.0 - results
