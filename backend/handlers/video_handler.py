@@ -9,6 +9,7 @@ Based on content type, routes to:
 import sys
 import random
 from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer
+from backend.handlers.facial_analyzer import XceptionNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
 
@@ -19,11 +20,12 @@ class VideoHandler:
 
     def __init__(self, device):
         """Initialize video handler with analyzers."""
-        # TODO: Add xceptionnet facial analyzer
-        # self.xceptionnet_facial_analyzer = FacialAnalyzer(model_name="XceptionNet")
-        self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
-            model_name="EfficientNet", device=device
+        self.xceptionnet_facial_analyzer = XceptionNetFacialAnalyzer(
+            model_name="XceptionNet", device=device
         )
+        # self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
+        #     model_name="EfficientNet", device=device
+        # )
         # TODO: Add mesonet facial analyzer
         # self.mesonet_facial_analyzer = FacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
@@ -59,9 +61,11 @@ class VideoHandler:
 
             efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
+
+            xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
+                faces, models_cfg["xceptionnet"]
             )
             mesonet_facial_score = random.random()
-            xceptionnet_facial_score = random.random()
             individual_scores = {
                 "efficientnet_score": efficientnet_facial_score['score'],
                 "mesonet_score": mesonet_facial_score,
