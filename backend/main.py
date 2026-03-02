@@ -85,9 +85,9 @@ class DeepfakeDetector:
             audio_result = self.audio_handler.process(audio_path)
             results["audio_score"] = audio_result["score"]
             results["individual_prediction"]["aasist_prediction"] = (
-                True
+                False
                 if audio_result["score"] > 0.5
-                else False
+                else True
             )
             os.unlink(audio_path)  # Clean up temp file
         except Exception as e:
@@ -127,7 +127,9 @@ class DeepfakeDetector:
         results["confidence"] = self._combine_scores(
             results["audio_score"], results["video_score"]
         )
-        results["is_real"] = results["confidence"] < 0.5
+        results["audio_is_real"] = results["audio_score"] < 0.5
+        results["video_is_real"] = results["video_score"] < 0.5
+        results["is_real"] = results["audio_is_real"] and results["video_is_real"]
 
         return results
 
@@ -273,11 +275,11 @@ def main():
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
                 if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
                     models_correct_prediction["aasist_correct_prediction"] += 1
-                if (result["is_real"] == ground_truth_audio) and (result["is_real"] == ground_truth_video):
+                if (result["audio_is_real"] == ground_truth_audio) and (result["video_is_real"] == ground_truth_video):
                     models_correct_prediction["ensemble_correct_prediction"] += 1
-                if ground_truth_video != True:
-                    logger.info("ground truth is wrong")
-                    sys.exit()
+                # if ground_truth_video != True:
+                #     logger.info("ground truth is wrong")
+                #     sys.exit()
                                     
         print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
 if __name__ == "__main__":
