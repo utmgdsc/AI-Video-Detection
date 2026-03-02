@@ -117,8 +117,13 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         for idx, face in enumerate(faces):
             try:
                 if torch.is_tensor(face):
-                    # Move channels from front to back: (3, 160, 160) -> (160, 160, 3)
                     face = face.permute(1, 2, 0).cpu().numpy()
+                    if face.min() < 0:
+                        face = ((face + 1) * 127.5).astype('uint8')
+                    elif face.max() <= 1.0:
+                        face = (face * 255).astype('uint8')
+                    else:
+                        face = face.astype('uint8')
                 transformed = transform(image=face)
                 image_tensor = transformed["image"]
                 probs = self.predict_single(
