@@ -275,7 +275,9 @@ def main():
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
                 if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
                     models_correct_prediction["aasist_correct_prediction"] += 1
-                if (result["audio_is_real"] == ground_truth_audio) and (result["video_is_real"] == ground_truth_video):
+                overall_truth = ground_truth_audio and ground_truth_video
+                # If the model's prediction matches the overall truth, it is correct
+                if result["is_real"] == overall_truth:
                     models_correct_prediction["ensemble_correct_prediction"] += 1
                 # if ground_truth_video != True:
                 #     logger.info("ground truth is wrong")

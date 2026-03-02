@@ -24,7 +24,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/FakeVideo-RealAudio/"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/val/small_test_set/"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 
