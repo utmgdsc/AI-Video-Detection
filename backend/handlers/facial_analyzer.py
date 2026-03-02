@@ -152,6 +152,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             "per_frame_score": [x["confidence"] for x in face_pred_result],
             "details": "This contain efficientnet result",
         }
+        print("efficientnet:"+ str(summary["score"]))
 
         return summary
 
@@ -171,43 +172,9 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
 
 
     def _to_bgr_numpy(self, face):
-        """
-        Ensure face is a numpy array in BGR order (H,W,3), uint8.
-        Accepts: numpy (BGR or RGB unknown), torch tensor (CHW), PIL image.
-        """
-        # torch Tensor -> numpy HWC
-        if isinstance(face, torch.Tensor):
-            x = face.detach().cpu()
-            # if CHW -> HWC
-            if x.ndim == 3 and x.shape[0] in (1, 3):
-                x = x.permute(1, 2, 0)
-            x = x.numpy()
-
-            # if float [0,1] -> uint8 [0,255]
-            if x.dtype != np.uint8:
-                x = (x * 255.0).clip(0, 255).astype(np.uint8)
-
-            # many pipelines store RGB; OpenCV expects BGR.
-            # If your upstream gives RGB, convert RGB->BGR:
-            if x.shape[-1] == 3:
-                x = x[..., ::-1]
-            return x
-
-        # PIL -> numpy RGB -> convert to BGR
-        if hasattr(face, "mode") and hasattr(face, "size"):
-            x = np.array(face)  # RGB
-            if x.ndim == 3 and x.shape[-1] == 3:
-                x = x[..., ::-1]  # RGB->BGR
-            return x.astype(np.uint8)
-
-        # numpy already
-        if isinstance(face, np.ndarray):
-            # ensure uint8
-            if face.dtype != np.uint8:
-                face = face.clip(0, 255).astype(np.uint8)
-            return face
-
-        raise TypeError(f"Unsupported face type: {type(face)}")
+        face_np = face.detach().cpu().permute(1, 2, 0).numpy()
+        face_np = (face_np * 255).clip(0, 255).astype("uint8") 
+        return cv2.cvtColor(face_np, cv2.COLOR_RGB2BGR)
 
     def process(self, faces, model_cfg):
         """
@@ -234,23 +201,18 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
             return summary
         
         use_cuda = str(self.device).startswith("cuda")
-        fake_count = 0
-        real_count = 0
         scores = []
         for face in faces: 
             prediction, output = predict_with_model(self._to_bgr_numpy(face), self.model, cuda=use_cuda)
-            if prediction:
-                fake_count+=1
-            else: 
-                real_count+=1
 
             scores.append(float(output.detach().cpu().numpy()[0][1])) # append fake score
         
         summary = {
-            "score": fake_count / (fake_count + real_count),
+            "score": sum(scores)/len(scores), #fake_count / (fake_count + real_count),
             "per_frame_score": scores,
             "details": "This contain xceptionnet result",
         }
+        print("xceptionnet:"+ str(summary["score"]))
         return summary
 class MesoNetFacialAnalyzer(FacialAnalyzer):
 
@@ -306,6 +268,7 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
             "per_frame_score": results,
             "details": "This contains MesoNet results.",
         }
+        print("mesonet:"+ str(summary["score"]))
         return summary
 
     def cleanup(self):
