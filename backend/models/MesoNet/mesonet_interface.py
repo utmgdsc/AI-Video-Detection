@@ -33,47 +33,92 @@ DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
 
 
 class MesoNetClient:
+    """
+    A client interface that initializes and connects to a local MesoNet server.
+    Imitates the functions of a model by sending data back and forth between the client and server.
+    """
+    # Static Variables
+    host = DEFAULT_HOST
+    port = DEFAULT_PORT
+    url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{DEFAULT_PORT}"
+    env_path = ENV_PATH
+    server_process = None
+    server_log = None
+    active_models = 0
 
-    def __init__(self):
-        debug("Initializing new MesoNet Client")
-        self.url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{DEFAULT_PORT}"
-        self.host = DEFAULT_HOST
-        self.port = DEFAULT_PORT
-        self.env_path = ENV_PATH
-        self.server_process = None
-        self.server_log = None
+    # =============== STATIC METHODS ===============
+    @staticmethod
+    def set_port(port: int):
+        """
+        Set the port number to bind the server to, if it is not running.
 
-        self.ensure_server_running()
+        Args:
+            port: An available port that is greater than or equal to 1024.
+        """
+        if MesoNetClient.can_connect():
+            raise RuntimeError(
+                "Failed to set MesoNet server port. Server is already running.")
+        if port < 0:
+            raise RuntimeError(
+                f"Cannot set MesoNet server port. Port '{port}' is an invalid port.")
+        if port < 1024:
+            raise RuntimeError(
+                f"Failed to MesoNet server port. Port '{port}' is a reserved port. Please select a port number at least 1024 (default is 8000).")
 
-    def ensure_server_running(self):
-        debug("Checking server is running...")
+        MesoNetClient.port = port
+        MesoNetClient.update_url()
+
+    @staticmethod
+    def update_url():
+        MesoNetClient.url = BASE_URL + \
+            f"{MesoNetClient.host}" + ":" + f"{MesoNetClient.port}"
+
+    @staticmethod
+    def can_connect():
+        """
+        Returns:
+            True if any client can connect with the server.
+            False if the server is not running or returns an invalid response.
+        """
         try:
-            debug("Sending test POST")
-            response = requests.get(self.url + "/test_server", timeout=1)
-            assert response.status_code == 200, "Server is not running."
-            debug("Server is running.")
-        except:
-            print("Starting MesoNet server...")
-            self.start_server()
-            debug("Waiting until ready")
-            self.wait_until_ready()
+            debug("Testing connecting...")
+            response = requests.get(
+                MesoNetClient.url + "/test_server", timeout=1)
+            return response.ok
+        except requests.exceptions.RequestException:
+            return False
 
-    def start_server(self, save_log=True):
+    @staticmethod
+    def ensure_server_running():
+        """
+        Starts the local MesoNet server.
+        If the server is already running, do nothing.
+        """
+        debug("Checking server is running...")
+        if (not MesoNetClient.can_connect()):
+            print("Starting MesoNet server...")
+            MesoNetClient.start_server()
+            debug("Waiting until ready")
+            MesoNetClient.wait_until_ready()
+
+    @staticmethod
+    def start_server(save_log=True):
         output = subprocess.DEVNULL
-        debug("Trying to open server log")
         if save_log:
-            self.server_log = open(os.path.join(LOG_DIR, "meso_server.txt"), "a")
-            output = self.server_log
+            debug("Trying to open server log")
+            MesoNetClient.server_log = open(os.path.join(
+                LOG_DIR, f"meso_server-port-{MesoNetClient.port}.txt"), "a")
+            output = MesoNetClient.server_log
 
         debug("Trying to run server")
-        self.server_process = subprocess.Popen(
+        MesoNetClient.server_process = subprocess.Popen(
             [
-                self.env_path,
+                MesoNetClient.env_path,
                 "-u",
                 "-m", "uvicorn",
                 "mesonet_server:app",
-                "--host", f"{self.host}",
-                "--port", f"{self.port}"
+                "--host", f"{MesoNetClient.host}",
+                "--port", f"{MesoNetClient.port}"
             ],
             cwd=BASE_DIR,
             stdout=output,
@@ -81,54 +126,90 @@ class MesoNetClient:
         )
         debug("Server started!")
 
-    def wait_until_ready(self):
+    @staticmethod
+    def wait_until_ready():
         for _ in range(20):
-            try:
-                debug("Testing connection...")
-                response = requests.get(self.url + "/test_server", timeout=1)
-                assert response.status_code == 200, "Server is not running."
-                debug("Server ready.")
+            if MesoNetClient.can_connect():
+                debug("MesoNet Server ready.")
                 return
-            except:
-                time.sleep(0.5)
+            time.sleep(0.5)
+        raise RuntimeError("MesoNet Server failed to start.")
 
-        raise RuntimeError("Server failed to start")
+    @staticmethod
+    def stop_server():
+        if MesoNetClient.server_process:
+            MesoNetClient.server_process.terminate()
+        if MesoNetClient.server_log is not None and not MesoNetClient.server_log.closed:
+            MesoNetClient.server_log.close()
 
-    def stop_server(self):
-        if self.server_process:
-            self.server_process.terminate()
-        if self.server_log is not None and not self.server_log.closed:
-            self.server_log.close()
+    # =============== INSTANCE METHODS ===============
 
-    def __exit__(self, exc_type, exc, tb):
-        self.stop_server()
+    def __init__(self):
+        debug("Initializing new MesoNet Client")
+        if (MesoNetClient.active_models == 0):
+            MesoNetClient.ensure_server_running()
+        try:
+            response = requests.get(
+                MesoNetClient.url + "/assign_uid", timeout=3)
+            response.raise_for_status()
+            data = response.json()
+            self.uid = data.get("uid")
+            if not self.uid:
+                raise ValueError("Server response missing 'uid'")
 
-    # =============== SERVER COMMUNICATION
+        except (requests.exceptions.RequestException, ValueError) as e:
+            raise ConnectionRefusedError(
+                f"MesoNet server failed to assign a new uid: {e}")
+        self.architecture = DEFAULT_ARCHITECTURE
+        self.weights_path = DEFAULT_WEIGHTS_PATH
+        self.faces_save_file_name = f"faces-port-{self.port}-uid-{self.uid}.npy"
+        self.faces_save_path = os.path.join(
+            TEMP_DIR, self.faces_save_file_name)
+        MesoNetClient.active_models += 1
+
+    def __del__(self):
+        MesoNetClient.active_models -= 1
+        if (MesoNetClient.active_models <= 0):
+            MesoNetClient.stop_server()
+        else:
+            try:
+                response = requests.get(
+                    MesoNetClient.url + "/cleanup", timeout=3)
+                response.raise_for_status()
+                data = response.json()
+                if not data.get("success"):
+                    raise ValueError(
+                        "Server failed to delete model. Potential memory leak.")
+
+            except (requests.exceptions.RequestException, ValueError) as e:
+                raise ConnectionRefusedError(
+                    f"Server failed to delete model. Potential memory leak.")
 
     def load_model(self, weights_path=None):
         debug("Asking server to load model...")
-        architecture = DEFAULT_ARCHITECTURE
-        if weights_path is None:
-            weights_path = DEFAULT_WEIGHTS_PATH
 
-        response = requests.post(
-            self.url + "/load_model",
-            json={
-                "architecture": architecture,
-                "weights_path": weights_path
-            }
-        )
-        debug(f"Load status: {response.status_code}")
-        debug(f"Load text: {response.text}")
-        if response.status_code == 200:
-            debug("Model loaded successfully.")
-            return self
-        debug("Model failed to load.")
-        # Else model failed to load
-        return None
-        
+        if weights_path is not None:
+            self.weights_path = weights_path
 
-    def process(self, faces, stop_server=True):
+        try:
+            response = requests.post(
+                MesoNetClient.url + "/cleanup",
+                json={"uid": self.uid},
+                timeout=3
+            )
+            debug(f"Load status: {response.status_code}")
+            debug(f"Load text: {response.text}")
+            response.raise_for_status()
+            data = response.json()
+            if data.get("success"):
+                debug("Model loaded successfully.")
+                return self
+        except requests.exceptions.RequestException:
+            debug("Model failed to load.")
+            # Else model failed to load
+            return None
+
+    def process(self, faces):
         """
         Analyze faces for deepfake detection.
 
@@ -144,29 +225,26 @@ class MesoNetClient:
             }
         """
         # Save faces to npy file
-        
+
         os.makedirs(TEMP_DIR, exist_ok=True)
-        np.save(os.path.join(TEMP_DIR, "faces.npy"), faces)
+        np.save(self.faces_save_path, faces)
 
         # Send npy file path
         response = requests.post(
-            self.url + "/process",
-            json={"faces_path": "temp/faces.npy"}
+            MesoNetClient.url + "/process",
+            json={
+                "uid": self.uid,
+                "faces_path": self.faces_save_path
+            }
         )
-        
+
         debug(f"Process status: {response.status_code}")
         debug(f"Process text: {response.text}")
         data = response.json()
 
-        if stop_server:
-            self.stop_server()
-
         if not data["success"]:
             return {}
         return data["predictions"]
-    
-    def cleanup(self):
-        self.stop_server()
 
 
 debug_num = 0
