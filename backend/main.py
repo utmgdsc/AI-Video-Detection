@@ -134,7 +134,6 @@ class DeepfakeDetector:
         else:
             results["video_is_real"] = results["video_score"] < 0.5
             results["is_real"] = results["video_is_real"]
-
         return results
 
     def _combine_scores(self, audio_score, video_score):
@@ -153,7 +152,6 @@ class DeepfakeDetector:
 
 
 def get_video_ground_truth(df, full_video_path):
-    return (True, True)
 
     # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
     filename = os.path.basename(full_video_path)
@@ -221,18 +219,21 @@ def main():
         cfg = yaml.safe_load(file)
 
     device = cfg["device"]
-    margin = cfg["margin"]
-    min_face_size = cfg["min_face_size"]
     if device == "cuda" and not torch.cuda.is_available():
         logger.warning("CUDA not available, using CPU")
         device = "cpu"
 
     # Initialize MTCNN
     logger.info("Initializing MTCNN...")
-    mtcnn = FastMTCNN(
-        stride=args.stride,
-        margin=args.margin,
-        min_face_size=args.min_face_size,
+    mtcnn_cfg = cfg["mtcnn"]
+    mtcnn = MTCNN(
+        margin=mtcnn_cfg["margin"],
+        min_face_size=mtcnn_cfg["min_face_size"],
+        thresholds=mtcnn_cfg["thresholds"],
+        factor=mtcnn_cfg["factor"],
+        post_process=mtcnn_cfg["post_process"],
+        select_largest=mtcnn_cfg["select_largest"],
+        keep_all=mtcnn_cfg["keep_all"],
         device=device
     )
 
@@ -278,8 +279,8 @@ def main():
                     models_correct_prediction["mesonet_correct_prediction"] += 1
                 if result["individual_prediction"]["xceptionnet_prediction"] == ground_truth_video:
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
-                # if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
-                #     models_correct_prediction["aasist_correct_prediction"] += 1
+                if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
+                    models_correct_prediction["aasist_correct_prediction"] += 1
                 overall_truth = ground_truth_audio and ground_truth_video
                 # If the model's prediction matches the overall truth, it is correct
                 # Print the ground truths
@@ -289,9 +290,6 @@ def main():
                 
                 if result["is_real"] == overall_truth:
                     models_correct_prediction["ensemble_correct_prediction"] += 1
-                # if ground_truth_video != True:
-                #     logger.info("ground truth is wrong")
-                #     sys.exit()
                                     
         print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
 if __name__ == "__main__":

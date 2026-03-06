@@ -12,7 +12,7 @@ import torch
 from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer, MesoNetFacialAnalyzer, XceptionNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
-from backend.handlers.utils.efficient_net_val_transform import get_val_transforms 
+# from backend.handlers.utils.efficient_net_val_transform import transform_faces
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,30 +45,18 @@ class VideoHandler:
                 'details': str
             }
         """
-        # TODO: Implement
         # 1. Extract frames from video
         frames = video_processor.extract_frames(video_path, sample_rate)
         if frames != []:
-            logger.info("frame extracted")
+            logger.info(f"DEBUG: {len(frames)} frames extracted")
+            
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
-        if faces:
-            logger.info("faces detected")
-
+        
         # 3. If faces found, run facial analyzer
-        if faces:
-                
-            # EfficientNet-B1 expects 240x240
-            eff_transforms = get_val_transforms(image_size=240) 
-            eff_tensor_faces = []
-            
-            for face in faces:
-                # Apply Albumentations transform (must extract "image" key)
-                transformed_face = eff_transforms(image=face)["image"]
-                eff_tensor_faces.append(transformed_face)
-            
-            # Stack list of tensors into a single batch (Shape: [Batch_Size, Channels, Height, Width])
-            faces = torch.stack(eff_tensor_faces)
+        if faces is not None and len(faces) > 0:
+            logger.info(f"{len(faces)} faces detected")
+            logger.info("Start processing faces")
             
             efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
@@ -82,9 +70,6 @@ class VideoHandler:
                 "mesonet_score": mesonet_facial_score['score'],
                 "xceptionnet_score": xceptionnet_facial_score['score'],
             }
-            logger.info(
-                f"efficientnet facial_score: {efficientnet_facial_score['score']}"
-            )
             
             # logger.info(f"facial_score: {facial_score['score']}")
 

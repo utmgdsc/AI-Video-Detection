@@ -9,85 +9,134 @@ import numpy as np
 from PIL import Image
 import subprocess
 from pathlib import Path
+import torch
 
 
-def extract_frames(video_path, sample_rate=1):
+# This is extracted from efficientnet repo extract_faces.py
+# Initialize MTCNN
+# logger.info("Initializing MTCNN...")
+# mtcnn = FastMTCNN(
+#     stride=args.stride,
+#     margin=args.margin,
+#     min_face_size=args.min_face_size,
+#     device=device
+# )
+
+# This is extracted from efficientnet repo extract_faces.py
+# def process_video(
+#     video_path: str,
+#     output_dir: str,
+#     mtcnn: FastMTCNN,
+#     batch_size: int = 60,
+#     frame_skip: int = 30
+# ) -> Tuple[int, int]:
+#     """
+#     Process a single video file.
+
+#     Args:
+#         video_path: Path to video file
+#         output_dir: Output directory
+#         mtcnn: FastMTCNN instance
+#         batch_size: Number of frames to process at once
+#         frame_skip: Process every Nth frame
+
+#     Returns:
+#         Tuple of (frames_processed, faces_detected)
+#     """
+#     cap = cv2.VideoCapture(video_path)
+#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+#     frames = []
+#     frames_processed = 0
+#     faces_detected = 0
+
+#     for frame_idx in range(total_frames):
+#         ret, frame = cap.read()
+
+#         if not ret:
+#             break
+
+#         if frame_idx % frame_skip == 0 or frame_idx == total_frames - 1:
+#             # Convert BGR to RGB
+#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#             frames.append(frame_rgb)
+
+#             if len(frames) >= batch_size or frame_idx == total_frames - 1:
+#                 # Process batch
+#                 video_name = Path(video_path).stem
+#                 faces = mtcnn(frames, output_dir, prefix=video_name)
+
+#                 frames_processed += len(frames)
+#                 faces_detected += faces
+
+#                 frames = []
+
+#     cap.release()
+#     return frames_processed, faces_detected
+
+# this is how we initialize mtcnn in ensemble
+
+# Initialize MTCNN
+# logger.info("Initializing MTCNN...")
+# mtcnn = MTCNN(
+#     margin=margin,
+#     min_face_size=min_face_size,
+#     device=device,
+#     keep_all=True,
+# )
+
+def extract_frames(video_path, sample_rate=30):
     """
-    Extract frames from video.
-
-    Args:
-        video_path: Path to video file
-        mtcnn: mtcnn is the model that extract faces
-        device: "cuda" or "cpu"
-        batch_size: size of each batch
-        sample_rate: Extract every Nth frame (1 = all frames)
-
-    Returns:
-        list: List of frames as numpy arrays (BGR format)
+    Extract frames from video exactly like EfficientNet's process_video.
     """
     frames = []
     cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    frame_count = 0
-    # output_dir = "frame_extracted/"
-    while cap.isOpened():
+    for frame_idx in range(total_frames):
         ret, frame = cap.read()
         if not ret:
             break
 
-        if frame_count % sample_rate == 0:
+        # Match the EfficientNet frame_skip logic
+        if frame_idx % sample_rate == 0 or frame_idx == total_frames - 1:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frames.append(frame_rgb)
-
-        frame_count += 1
 
     cap.release()
     return frames
 
-
+# this is how we extract faces in ensemble
 def detect_faces(frames, mtcnn, batch_size):
     """
-    Detect and crop faces from frames.
-
-    Args:
-        frames: List of frames (numpy arrays)
-
-    Returns:
-        list: List of cropped face images
+    Detect and crop faces using raw bounding boxes to prevent 
+    MTCNN from automatically applying its own resizing/normalization.
     """
-    # TODO: Implement face detection
-    # Options:
-    # - cv2.CascadeClassifier (simple, fast)
-    # - dlib (more accurate)
-    # - MTCNN (deep learning based)
-    batch = []
-    batch_idx = 0
-    frame_idx = 0
     faces = []
-    while frame_idx < len(frames):
-        batch.append(frames[frame_idx])
-        frame_idx += 1
-        batch_idx += 1
-        # Process batch
-        if batch_idx >= batch_size or frame_idx == len(frames):
-            pil_batch = [Image.fromarray(f) for f in batch]
+    
+    # Process frames in batches
+    for i in range(0, len(frames), batch_size):
+        batch_frames = frames[i : i + batch_size]
+        
+        # .detect() expects a list of numpy arrays and returns bounding boxes
+        batch_boxes, _ = mtcnn.detect(batch_frames)
+        
+        for frame, boxes in zip(batch_frames, batch_boxes):
+            if boxes is None:
+                continue
+                
+            for box in boxes:
+                box = [int(b) for b in box]
+                
+                # Manual numpy crop: frame[y1:y2, x1:x2]
+                face = frame[box[1]:box[3], box[0]:box[2]]
+                
+                # Validate face size (filter out garbage)
+                if len(face) == 0 or face.shape[0] < 10 or face.shape[1] < 10:
+                    continue
+                    
+                faces.append(face)
 
-            batch_result = mtcnn(pil_batch)
-            if batch_result is not None:
-                for result in batch_result:
-                    # no face
-                    if result is None:
-                        continue
-
-                    # multiple faces in a frame
-                    if result.ndim == 4:
-                        for face in result:
-                            faces.append(face)
-                    else:
-                        # one face in a frame
-                        faces.append(result)
-            batch_idx = 0
-            batch = []
     return faces
 
 
