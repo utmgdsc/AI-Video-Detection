@@ -15,6 +15,8 @@ datasets:
   faceforensic:
     dataset_path: "./backend/dataset/FaceForensics++"
     example_video_path: "./backend/dataset/FaceForensics++/original/002.mp4"
+    example_video_set_path: "./backend/dataset/FaceForensics++/original"
+    metadata: "./backend/dataset/FaceForensics++/csv/original.csv"
   kaggle:
     dataset_path:
     example_video_path:

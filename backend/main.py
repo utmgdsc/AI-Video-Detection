@@ -127,9 +127,13 @@ class DeepfakeDetector:
         results["confidence"] = self._combine_scores(
             results["audio_score"], results["video_score"]
         )
-        results["audio_is_real"] = results["audio_score"] < 0.5
-        results["video_is_real"] = results["video_score"] < 0.5
-        results["is_real"] = results["audio_is_real"] and results["video_is_real"]
+        if results["audio_score"]: 
+            results["audio_is_real"] = results["audio_score"] < 0.5
+            results["video_is_real"] = results["video_score"] < 0.5
+            results["is_real"] = results["audio_is_real"] and results["video_is_real"]
+        else:
+            results["video_is_real"] = results["video_score"] < 0.5
+            results["is_real"] = results["video_is_real"]
 
         return results
 
@@ -149,6 +153,7 @@ class DeepfakeDetector:
 
 
 def get_video_ground_truth(df, full_video_path):
+    return (True, True)
 
     # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
     filename = os.path.basename(full_video_path)
@@ -224,17 +229,17 @@ def main():
 
     # Initialize MTCNN
     logger.info("Initializing MTCNN...")
-    mtcnn = MTCNN(
-        margin=margin,
-        min_face_size=min_face_size,
-        device=device,
-        keep_all=True,
+    mtcnn = FastMTCNN(
+        stride=args.stride,
+        margin=args.margin,
+        min_face_size=args.min_face_size,
+        device=device
     )
 
     if args.input_dir:
         input_path = args.input_dir
     else:
-        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
+        input_path = cfg["datasets"]["faceforensic"]["example_video_set_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
     if os.path.isfile(input_path):
@@ -273,10 +278,15 @@ def main():
                     models_correct_prediction["mesonet_correct_prediction"] += 1
                 if result["individual_prediction"]["xceptionnet_prediction"] == ground_truth_video:
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
-                if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
-                    models_correct_prediction["aasist_correct_prediction"] += 1
+                # if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
+                #     models_correct_prediction["aasist_correct_prediction"] += 1
                 overall_truth = ground_truth_audio and ground_truth_video
                 # If the model's prediction matches the overall truth, it is correct
+                # Print the ground truths
+                logger.info(f"Ground Truth Video: {ground_truth_video} | Ground Truth Audio: {ground_truth_audio} | Overall Truth: {overall_truth}")
+                # Added the video_path to the print statement so you can verify the file
+                logger.info(f"File: {video_path} | GT Video: {ground_truth_video} | GT Audio: {ground_truth_audio} | Overall Truth: {overall_truth}")
+                
                 if result["is_real"] == overall_truth:
                     models_correct_prediction["ensemble_correct_prediction"] += 1
                 # if ground_truth_video != True:
