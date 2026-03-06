@@ -8,10 +8,11 @@ Based on content type, routes to:
 
 import sys
 import random
+import torch
 from backend.handlers.facial_analyzer import EfficientNetFacialAnalyzer, MesoNetFacialAnalyzer, XceptionNetFacialAnalyzer
 from backend.handlers.image_analyzer import ImageAnalyzer
 from backend.preprocessing import video_processor
-
+from backend.handlers.utils.efficient_net_val_transform import get_val_transforms 
 import logging
 
 logger = logging.getLogger(__name__)
@@ -56,11 +57,22 @@ class VideoHandler:
 
         # 3. If faces found, run facial analyzer
         if faces:
-
+                
+            # EfficientNet-B1 expects 240x240
+            eff_transforms = get_val_transforms(image_size=240) 
+            eff_tensor_faces = []
+            
+            for face in faces:
+                # Apply Albumentations transform (must extract "image" key)
+                transformed_face = eff_transforms(image=face)["image"]
+                eff_tensor_faces.append(transformed_face)
+            
+            # Stack list of tensors into a single batch (Shape: [Batch_Size, Channels, Height, Width])
+            faces = torch.stack(eff_tensor_faces)
+            
             efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
                 faces, models_cfg["efficientnet_b1"]
             )
-
             xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
                 faces, models_cfg["xceptionnet"]
             )
