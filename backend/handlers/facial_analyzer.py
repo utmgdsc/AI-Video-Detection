@@ -18,6 +18,13 @@ from backend.models.wrappers.xception import predict_with_model
 import logging
 import numpy as np
 import cv2
+import traceback # Make sure to import this at the top of your file!
+from albumentations import (
+    Compose,
+    Resize,
+    Normalize,
+)
+from albumentations.pytorch import ToTensorV2
 
 logger = logging.getLogger(__name__)
 
@@ -78,89 +85,102 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         super().__init__(model_name, weights_path)
         self.device = device
 
-    def predict_single(self, model, image_tensor, device):
-        """Run prediction on a single image."""
-        model.eval()
+    # this is extracted from efficientnet repo train.py
+    def get_val_transforms(self, image_size: int = 224) -> Compose:
+        """
+        Get validation/test data preprocessing pipeline.
 
-        with torch.no_grad():
-            # tensor is 4D (Batch, C, H, W)
-            if image_tensor.dim() == 3:
-                image_tensor = image_tensor.unsqueeze(0)
-            image_tensor = image_tensor.to(device)
-            output = model(image_tensor)
-            probs = F.softmax(output, dim=1)
+        Args:
+            image_size: Target image size
 
-        return probs.cpu().numpy()[0]
+        Returns:
+            Albumentations Compose object with validation transforms
+
+        Example:
+            >>> transforms = get_val_transforms(224)
+            >>> preprocessed = transforms(image=image)
+        """
+        return Compose(
+            [
+                Resize(image_size, image_size),
+                Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ToTensorV2(),
+            ]
+        )
+
+    def transform_faces(self, faces):
+        # EfficientNet-B1 expects 240x240
+        eff_transforms = self.get_val_transforms(image_size=240) 
+        eff_tensor_faces = []
+        
+        for face in faces:
+            # Apply Albumentations transform (must extract "image" key)
+            transformed_face = eff_transforms(image=face)["image"]
+            eff_tensor_faces.append(transformed_face)
+        # Stack list of tensors into a single batch (Shape: [Batch_Size, Channels, Height, Width])
+        faces = torch.stack(eff_tensor_faces)
+        
+        return faces
 
     def process(self, faces, model_cfg):
         """
         Analyze faces for deepfake detection.
-
+        Put 15 faces in a batch and process them simultaneously
         Args:
-            faces: List of face images (cropped from video frames)
-
-        Returns:
-            dict: {
-                'score': float (0-1, higher = more likely fake),
-                'per_frame_scores': list of floats,
-                'details': str
-            }
+            faces_tensor: A properly formatted PyTorch tensor batch of faces.
         """
         if self.model is None:
             self.load_model(model_cfg["weights_path"], self.device)
-
-        # Prepare transform
-        image_size = model_cfg["image_size"]
-        transform = get_val_transforms(image_size)
+        
+        faces_tensor = self.transform_faces(faces)
         face_pred_result = []
-        logger.info("Start processing faces")
-        for idx, face in enumerate(faces):
-            try:
-                if torch.is_tensor(face):
-                    face = face.permute(1, 2, 0).cpu().numpy()
-                    if face.min() < 0:
-                        face = ((face + 1) * 127.5).astype('uint8')
-                    elif face.max() <= 1.0:
-                        face = (face * 255).astype('uint8')
-                    else:
-                        face = face.astype('uint8')
-                transformed = transform(image=face)
-                image_tensor = transformed["image"]
-                probs = self.predict_single(
-                    self.model, image_tensor, self.device)
+        
+        # Move the batch to the GPU/CPU
+        faces_tensor = faces_tensor.to(self.device)
 
-                fake_prob = probs[0]
-                real_prob = probs[1]
+        try:
+            with torch.no_grad():
+                # Evaluate the ENTIRE batch at once! No loops needed.
+                outputs = self.model(faces_tensor)
+                
+                # DEBUG: Let's see exactly what shape the model is spitting out
+                logger.info(f"DEBUG: Model outputs shape: {outputs.shape}")
+                
+                # Convert raw logits to probabilities (percentages)
+                probs = torch.softmax(outputs, dim=1).cpu().numpy()
+
+            # Process the results
+            for idx, prob in enumerate(probs):
+                real_prob = prob[0] 
+                fake_prob = prob[1] 
+                
                 prediction = "real" if real_prob >= model_cfg["threshold"] else "fake"
 
                 face_pred_result.append(
                     {
                         "face idx": idx,
                         "prediction": prediction,
-                        "real_prob": real_prob,
-                        "fake_prob": fake_prob,
-                        "confidence": max(fake_prob, real_prob),
+                        "real_prob": float(real_prob),
+                        "fake_prob": float(fake_prob),
+                        "confidence": float(max(fake_prob, real_prob)),
                     }
                 )
-            except Exception as e:
-                logger.warning(f"Cannot process face {idx}: {e}")
-                continue
+        except Exception as e:
+            # BUG FIX: Print the exact line number and code that caused the crash!
+            logger.error(f"Failed to process face batch:\n{traceback.format_exc()}")
+            return {}
 
         if len(face_pred_result) == 0:
             return {}
 
-        avg_fake_score = sum(r["fake_prob"] for r in face_pred_result) / len(
-            face_pred_result
-        )
+        avg_fake_score = sum(r["fake_prob"] for r in face_pred_result) / len(face_pred_result)
         summary = {
-            "score": avg_fake_score,
-            "per_frame_score": [x["confidence"] for x in face_pred_result],
+            "score": float(avg_fake_score),
+            "per_frame_score": [float(x["confidence"]) for x in face_pred_result],
             "details": "This contain efficientnet result",
         }
-        print("efficientnet:"+ str(summary["score"]))
 
         return summary
-
 
 class XceptionNetFacialAnalyzer(FacialAnalyzer):
 
@@ -202,13 +222,16 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
             "per_frame_score": [],
             "details": "No face detected",
         }
-        if not faces: 
+        if len(faces) == 0:
             return summary
         
         use_cuda = str(self.device).startswith("cuda")
         scores = []
         for face in faces: 
-            prediction, output = predict_with_model(self._to_bgr_numpy(face), self.model, cuda=use_cuda)
+            # FIX: Face is already a NumPy array, just convert RGB to BGR
+            # prediction, output = predict_with_model(self._to_bgr_numpy(face), self.model, cuda=use_cuda)
+            face_bgr = cv2.cvtColor(face, cv2.COLOR_RGB2BGR)
+            prediction, output = predict_with_model(face_bgr, self.model, cuda=use_cuda)
 
             scores.append(float(output.detach().cpu().numpy()[0][1])) # append fake score
         
