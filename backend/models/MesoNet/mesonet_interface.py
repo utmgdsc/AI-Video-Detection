@@ -25,8 +25,7 @@ BASE_URL = "http://"  # + "127.0.0.1:8000" to form complete URL
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 # Path to Conda mesonet environment python.exe
-HOME_PATH = "/home/gdgteam1"
-ENV_PATH = HOME_PATH + "/miniconda3/envs/mesonet/bin/python3"
+ENV_PATH = "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
 
 DEFAULT_ARCHITECTURE = "Meso4"
 DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
@@ -41,10 +40,9 @@ class MesoNetClient:
     host = DEFAULT_HOST
     port = DEFAULT_PORT
     url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{DEFAULT_PORT}"
-    env_path = ENV_PATH
+    env_path = None
     server_process = None
     server_log = None
-    active_models = 0
 
     # =============== STATIC METHODS ===============
     @staticmethod
@@ -103,6 +101,11 @@ class MesoNetClient:
 
     @staticmethod
     def start_server(save_log=True):
+        if MesoNetClient.env_path == None:
+            raise RuntimeError(
+                "No environment specified for MesoNet Server. Check ensemble.yaml venv_path.")
+
+        os.makedirs(TEMP_DIR, exist_ok=True)
         output = subprocess.DEVNULL
         if save_log:
             debug("Trying to open server log")
@@ -135,19 +138,15 @@ class MesoNetClient:
             time.sleep(0.5)
         raise RuntimeError("MesoNet Server failed to start.")
 
-    @staticmethod
-    def stop_server():
-        if MesoNetClient.server_process:
-            MesoNetClient.server_process.terminate()
+    def cleanup():
         if MesoNetClient.server_log is not None and not MesoNetClient.server_log.closed:
             MesoNetClient.server_log.close()
 
     # =============== INSTANCE METHODS ===============
 
-    def __init__(self):
+    def __init__(self, model_cfg):
         debug("Initializing new MesoNet Client")
-        if (MesoNetClient.active_models == 0):
-            MesoNetClient.ensure_server_running()
+        MesoNetClient.ensure_server_running()
         try:
             response = requests.get(
                 MesoNetClient.url + "/assign_uid", timeout=3)
@@ -160,30 +159,40 @@ class MesoNetClient:
         except (requests.exceptions.RequestException, ValueError) as e:
             raise ConnectionRefusedError(
                 f"MesoNet server failed to assign a new uid: {e}")
-        self.architecture = DEFAULT_ARCHITECTURE
-        self.weights_path = DEFAULT_WEIGHTS_PATH
+
+        self.load_cfg(model_cfg)
         self.faces_save_file_name = f"faces-port-{self.port}-uid-{self.uid}.npy"
         self.faces_save_path = os.path.join(
             TEMP_DIR, self.faces_save_file_name)
-        MesoNetClient.active_models += 1
 
     def __del__(self):
-        MesoNetClient.active_models -= 1
-        if (MesoNetClient.active_models <= 0):
-            MesoNetClient.stop_server()
-        else:
-            try:
-                response = requests.get(
-                    MesoNetClient.url + "/cleanup", timeout=3)
-                response.raise_for_status()
-                data = response.json()
-                if not data.get("success"):
-                    raise ValueError(
-                        "Server failed to delete model. Potential memory leak.")
+        try:
+            response = requests.get(
+                MesoNetClient.url + "/cleanup", timeout=3)
+            response.raise_for_status()
+            data = response.json()
+            if not data.get("success"):
+                raise ValueError(
+                    "Server failed to delete model. Potential memory leak.")
 
-            except (requests.exceptions.RequestException, ValueError) as e:
-                raise ConnectionRefusedError(
-                    f"Server failed to delete model. Potential memory leak.")
+        except (requests.exceptions.RequestException, ValueError) as e:
+            raise ConnectionRefusedError(
+                f"Server failed to delete model. Potential memory leak.")
+
+    def load_cfg(self, cfg):
+        self.architecture = DEFAULT_ARCHITECTURE
+        if "architecture" in cfg:
+            self.architecture = cfg["architecture"]
+
+        self.weights_path = DEFAULT_WEIGHTS_PATH
+        if "weights_path" in cfg:
+            self.weights_path = cfg["weights_path"]
+
+        if MesoNetClient.env_path != None:
+            raise RuntimeError("")
+        if "venv_path" not in cfg:
+            raise RuntimeError("")
+        MesoNetClient.env_path = cfg["venv_path"]
 
     def load_model(self, weights_path=None):
         debug("Asking server to load model...")
@@ -255,18 +264,3 @@ def debug(msg):
     print(f"DEBUG {debug_num} =====: {msg}")
     debug_num += 1
 
-
-if __name__ == "__main__":
-    print("Begin testing for mesonet_interface.py")
-    # We are simulating calls that would be made from from mesonet.py
-    weights_path = "weights/Meso4_DF.h5"
-
-    print("\tTesting initialization:")
-    model = MesoNetClient()
-
-    print("\tTesting load_model:")
-    model.load_model(weights_path)
-
-    print("\tStopping server:")
-    model.stop_server()
-    print("End")

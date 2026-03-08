@@ -34,12 +34,12 @@ class FacialAnalyzer:
         self.weights_path = weights_path
         self.model = None
 
-    def load_model(self, weights_path, device):
+    def load_model(self, weights_path, device, model_cfg=None):
         """Load the selected model."""
         if self.model_name == "XceptionNet":
             self.model = xception.load_model(weights_path)
         elif self.model_name == "MesoNet":
-            self.model = mesonet.load_model(weights_path)
+            self.model = mesonet.load_model(model_cfg)
         elif self.model_name == "EfficientNet":
             self.model = efficientnet.load_model(
                 weights_path=weights_path, device=device
@@ -163,13 +163,11 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
 
         # If no model is loaded, initialize one
         if self.model is None:
-            weights_path = None
-            if "weights_path" in model_cfg:
-                weights_path = model_cfg["weights_path"]
-            self.load_model(weights_path, None)
+            self.load_model(None, None, model_cfg=model_cfg)
 
         if self.model is None:
-            summary = {}
+            # If model failed to load
+            return # TODO:
 
         processed_faces = []
 

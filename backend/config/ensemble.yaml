@@ -41,8 +41,9 @@ models:
 
   mesonet:
     active: true
-    # architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4" # Not implemented
-    # weights_path: "weights/Meso4_custom_weight1_epoch7.h5" # weights directory located in ./backend/models/MesoNet
+    architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
+    weights_path: "weights/Meso4_custom_weight1_epoch7.h5" # weights directory located in ./backend/models/MesoNet
+    venv_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
     image_size: 256
     threshold: 0.5
 
