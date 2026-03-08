@@ -31,16 +31,17 @@ DEFAULT_PORT = 8000
 DEFAULT_ARCHITECTURE = "Meso4"
 DEFAULT_WEIGHTS_PATH = "weights/Meso4_custom_weight1_epoch7.h5"
 
-faces_save_file_name = f"faces-port-{DEFAULT_PORT}.npy"
-faces_save_path = os.path.join(TEMP_DIR, faces_save_file_name)
-
 class MesoNetClient:
 
     def __init__(self, cfg):
         debug("Initializing new MesoNet Client")
-        self.url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{DEFAULT_PORT}"
         self.host = DEFAULT_HOST
         self.load_config(cfg)
+        self.url = BASE_URL + f"{DEFAULT_HOST}" + ":" + f"{self.port}"
+        
+        faces_save_file_name = f"faces-port-{self.port}.npy"
+        self.faces_save_path = os.path.join(TEMP_DIR, faces_save_file_name)
+        
         self.server_process = None
         self.server_log = None
 
@@ -48,7 +49,7 @@ class MesoNetClient:
     
     def load_config(self, cfg):
         self.env_path = None
-        self.port = DEFAULT_WEIGHTS_PATH
+        self.port = DEFAULT_PORT
         self.architecture = DEFAULT_ARCHITECTURE
         self.weights_path = DEFAULT_WEIGHTS_PATH
         
@@ -172,12 +173,12 @@ class MesoNetClient:
         
         # Save faces to npy file
         os.makedirs(TEMP_DIR, exist_ok=True)
-        np.save(faces_save_path, faces)
+        np.save(self.faces_save_path, faces)
 
         # Send npy file path
         response = requests.post(
             self.url + "/process",
-            json={"faces_path": faces_save_path}
+            json={"faces_path": self.faces_save_path}
         )
         
         debug(f"Process status: {response.status_code}")
