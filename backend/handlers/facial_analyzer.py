@@ -245,13 +245,16 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
 class MesoNetFacialAnalyzer(FacialAnalyzer):
 
     def process(self, faces, model_cfg):
+        # Extract config variables
         image_size = 256
         threshold = 0.5
+        score_method = None
         if "image_size" in model_cfg:
             image_size = model_cfg["image_size"]
-            
         if "threshold" in model_cfg:
             threshold = model_cfg["threshold"]
+        if "scoring_method" in model_cfg:
+            score_method = model_cfg["scoring_method"]
 
         # If no model is loaded, initialize one
         if self.model is None:
@@ -293,17 +296,24 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         results = np.array(results)
         # MesoNet classes 1 as real and 0 as fake, so we flip the score
         results = 1.0 - results
-        
-        fake_count = np.count_nonzero(results > threshold)
-        total_faces = results.size
+        score = self.scoring_method(results, threshold, score_method)
         
         summary = {
-            "score": fake_count / total_faces,
+            "score": score,
             "per_frame_score": results,
             "details": "This contains MesoNet results.",
         }
         print("mesonet:"+ str(summary["score"]))
         return summary
+    
+    def scoring_method(self, results, threshold, option):
+        match option:
+            case "mean score":
+                return np.mean(results)
+            case "median score":
+                return np.median(results)
+            case _:
+                return np.mean(results > threshold)
 
     def cleanup(self):
         """
