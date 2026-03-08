@@ -61,7 +61,7 @@ models:
     weights_path: "./backend/models/XceptionNet-Detector/Deepfake-Detection/output/xception_ff23/best.pkl"
 
   mesonet:
-    active: false
+    active: true
     architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
     weights_path: "./weights/Meso4_DF.h5"
     env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
