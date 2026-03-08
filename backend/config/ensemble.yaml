@@ -66,7 +66,12 @@ models:
     weights_path: "./weights/Meso4_DF.h5"
     env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
     image_size: 256
-    threshold: 0.5
     port: 8001
+    # scoring_method: Options are
+    #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
+    #   "median score":   median of [face0_score, face1_score, ..., faceN_score]
+    #   Any other string: mean of [face0_class, face1_class, ..., faceN_class], where faceI_class = (faceI_score > threshold)
+    scoring_method: "Default"
+    threshold: 0.5
 
   aasist:
