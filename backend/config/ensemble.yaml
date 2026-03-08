@@ -62,10 +62,11 @@ models:
 
   mesonet:
     active: false
-    # architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
-    # weights_path: "Meso4_DF.h5"           # TODO: turn into "weight" instead of path?
+    architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
+    weights_path: "./weights/Meso4_DF.h5"
+    env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
     image_size: 256
     threshold: 0.5
-    ports: 8001
+    port: 8001
 
   aasist:

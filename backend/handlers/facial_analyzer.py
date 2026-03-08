@@ -42,12 +42,12 @@ class FacialAnalyzer:
         self.weights_path = weights_path
         self.model = None
 
-    def load_model(self, weights_path, device):
+    def load_model(self, weights_path, device, model_cfg=None):
         """Load the selected model."""
         if self.model_name == "XceptionNet":
             self.model = xception.load_model(weights_path)
         elif self.model_name == "MesoNet":
-            self.model = mesonet.load_model(weights_path)
+            self.model = mesonet.load_model(model_cfg)
         elif self.model_name == "EfficientNet":
             self.model = efficientnet.load_model(
                 weights_path=weights_path, device=device
@@ -245,17 +245,19 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
 class MesoNetFacialAnalyzer(FacialAnalyzer):
 
     def process(self, faces, model_cfg):
-        image_size = model_cfg["image_size"]
+        image_size = 256
+        threshold = 0.5
+        if "image_size" in model_cfg:
+            image_size = model_cfg["image_size"]
+            
+        if "threshold" in model_cfg:
+            threshold = model_cfg["threshold"]
 
         # If no model is loaded, initialize one
         if self.model is None:
-            weights_path = None
-            if "weights_path" in model_cfg:
-                weights_path = model_cfg["weights_path"]
-            self.load_model(weights_path, None)
-
-        if self.model is None:
-            summary = {}
+            self.load_model(None, None, model_cfg)
+            if self.model is None:
+                raise RuntimeError("MesoNet Model failed to load.")
 
         processed_faces = []
 
@@ -282,13 +284,17 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
 
         images = np.stack(processed_faces, axis=0)  # (N, 256, 256, 3)
 
-        # We can set stop_server=False to keep the model active after the ensemble has terminated
+        # stop_server is false so that we may continue using the same server for multiple videos
         results = self.model.process(images, stop_server=False)
+        if results == None:
+            self.cleanup()
+            raise RuntimeError("Failed to process MesoNet results.")
+        
         results = np.array(results)
         # MesoNet classes 1 as real and 0 as fake, so we flip the score
         results = 1.0 - results
         
-        fake_count = np.count_nonzero(results > model_cfg["threshold"])
+        fake_count = np.count_nonzero(results > threshold)
         total_faces = results.size
         
         summary = {
