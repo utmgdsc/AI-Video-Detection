@@ -119,6 +119,9 @@ class VideoHandler:
             + xceptionnet_facial_score * (1 / 3)
         )
     
+    def cleanup(self):
+        self.mesonet_facial_analyzer.cleanup()
+        
     def __exit__(self, exc_type, exc, tb):
         # On exit, stop MesoNet environment
-        self.mesonet_facial_analyzer.cleanup()
+        self.cleanup()
