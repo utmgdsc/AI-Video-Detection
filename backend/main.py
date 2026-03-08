@@ -290,7 +290,8 @@ def main():
                 
                 if result["is_real"] == overall_truth:
                     models_correct_prediction["ensemble_correct_prediction"] += 1
-                                    
+        
+        detector.video_handler.cleanup()
         print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
 if __name__ == "__main__":
     main()
