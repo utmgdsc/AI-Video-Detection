@@ -17,7 +17,7 @@ from backend.models.MesoNet.mesonet_interface import MesoNetClient as MesoNetMod
 # Reference your docs/models/mesonet/02-source-and-setup.md for setup instructions
 
 
-def load_model(weights_path=None):
+def load_model(model_cfg):
     """
     Load MesoNet model.
 
@@ -28,7 +28,10 @@ def load_model(weights_path=None):
     Returns:
         model: Loaded PyTorch model ready for inference.
     """
-    model = MesoNetModel()
+    model = MesoNetModel(model_cfg)
+    weights_path = None
+    if "weights_path" in model_cfg:
+        weights_path = model_cfg["weights_path"]
     model.load_model(weights_path)
     return model
 
@@ -62,8 +65,5 @@ def process(faces, model_cfg):
             'details': str
         }
     """
-    # TODO: Since MesoNetFacialAnalyzer calls self.model.process instead of mesonet.process(), this function never gets called
+    # Since MesoNetFacialAnalyzer calls self.model.process instead of mesonet.process(), this function never gets called
     raise NotImplementedError("This function is not expected to be called.")
-    results = model.process(faces)
-    # TODO: Stop server?
-    return results

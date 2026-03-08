@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from classifiers import *
 
+PRINT_DEBUGS = False
 
 class LoadModel(BaseModel):
     architecture: str
@@ -87,8 +88,7 @@ def process(data: Process):
 
     debug(f"PREDICTIONS MADE, RETURNING RESULTS AS:")
     debug(f"{preds}")
-    
-    # TODO: Save preds as a file or send over as HTTP request
+
     return {"success": True,
             "predictions": preds}
 
@@ -97,6 +97,7 @@ debug_num = 0
 
 
 def debug(msg):
-    global debug_num
-    print(f"SERVER {debug_num} =====: {msg}")
-    debug_num += 1
+    if PRINT_DEBUGS:
+        global debug_num
+        print(f"MesoServer {debug_num} =====: {msg}")
+        debug_num += 1
