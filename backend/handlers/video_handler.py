@@ -26,7 +26,7 @@ class VideoHandler:
         self.efficientnet_facial_analyzer = EfficientNetFacialAnalyzer(
             model_name="EfficientNet", device=device
         )
-        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet", weights_path="weights/Meso4_DF.h5") # TODO: Change this to yaml? 
+        self.mesonet_facial_analyzer = MesoNetFacialAnalyzer(model_name="MesoNet")
         self.image_analyzer = ImageAnalyzer()
 
     def process(self, models_cfg, device, video_path, mtcnn, batch_size, sample_rate):
