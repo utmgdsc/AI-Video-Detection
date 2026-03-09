@@ -240,7 +240,7 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
             "per_frame_score": scores,
             "details": "This contain xceptionnet result",
         }
-        print("xceptionnet:"+ str(summary["score"]))
+        print("xceptionnet video score:"+ str(summary["score"]))
         return summary
 class MesoNetFacialAnalyzer(FacialAnalyzer):
 
