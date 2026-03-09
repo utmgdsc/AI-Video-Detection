@@ -18,7 +18,7 @@ import time
 import os
 import warnings
 
-PRINT_DEBUG = False
+PRINT_DEBUG = True
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_DIR = os.path.join(BASE_DIR, "temp")
@@ -67,6 +67,7 @@ class MesoNetClient:
             
         if "weights_path" in cfg:
             self.weights_path = cfg["weights_path"]
+        print(f"Using meso weight {self.weights_path}.")
         
 
     def ensure_server_running(self):

@@ -6,7 +6,7 @@ batch_size: 60
 frame_skip: 30
 margin: 50
 min_face_size: 100
-compare_baseline_accuracy: false
+compare_baseline_accuracy: true
 
 datasets:
   ASVspoof2019_LA:
@@ -15,7 +15,7 @@ datasets:
   faceforensic:
     dataset_path: "./backend/dataset/FaceForensics++"
     example_video_path: "./backend/dataset/FaceForensics++/original/002.mp4"
-    example_video_set_path: "./backend/dataset/FaceForensics++/Deepfakes/"
+    example_video_set_path: "./backend/dataset/FaceForensics++/original/"
     metadata: "./backend/dataset/FaceForensics++/csv/Deepfakes.csv"
   kaggle:
     dataset_path:
@@ -26,7 +26,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/val/small_test_set/"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-FakeAudio"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
@@ -63,10 +63,10 @@ models:
   mesonet:
     active: true
     architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
-    weights_path: "./weights/Meso4_DF.h5"
+    weights_path: "./weights/meso4_weight_refit_val_acc.h5"
     env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
     image_size: 256
-    port: 8001
+    port: 8002
     # scoring_method: Options are
     #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
     #   "median score":   median of [face0_score, face1_score, ..., faceN_score]
