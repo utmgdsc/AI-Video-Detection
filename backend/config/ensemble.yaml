@@ -6,6 +6,7 @@ batch_size: 60
 frame_skip: 30
 margin: 50
 min_face_size: 100
+compare_baseline_accuracy: true
 
 datasets:
   ASVspoof2019_LA:
@@ -14,12 +15,31 @@ datasets:
   faceforensic:
     dataset_path: "./backend/dataset/FaceForensics++"
     example_video_path: "./backend/dataset/FaceForensics++/original/002.mp4"
+    example_video_set_path: "./backend/dataset/FaceForensics++/original/"
+    metadata: "./backend/dataset/FaceForensics++/csv/Deepfakes.csv"
   kaggle:
     dataset_path:
     example_video_path:
   LAV-DF:
     dataset_path:
     example_video_path:
+  FakeAVCeleb:
+    dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
+    example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-FakeAudio"
+    metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
+
+# MTCNN config 
+mtcnn:
+  stride: 1
+  resize: 1.0
+  margin: 50
+  min_face_size: 100
+  thresholds: [0.6, 0.7, 0.7]
+  factor:  0.7
+  post_process: True
+  select_largest: True
+  keep_all: True
 
 # Individual Model Configurations
 models:
@@ -27,7 +47,7 @@ models:
   efficientnet_b1:
     active: true
     architecture: "efficientnet_b1"
-    weights_path: "./backend/models/DeepFake_EfficientNet/outputs/checkpoints/best_model.pth"
+    weights_path: "./backend/models/DeepFake_EfficientNet/faceforensic_output/outputs/checkpoints/best_model.pth"
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5
@@ -38,7 +58,20 @@ models:
     #   normalization: "imagenet" # Standard ImageNet mean/std
 
   xceptionnet:
+    weights_path: "./backend/models/XceptionNet-Detector/Deepfake-Detection/output/xception_ff23/best.pkl"
 
   mesonet:
+    active: true
+    architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
+    weights_path: "./weights/meso4_weight_refit_val_acc.h5"
+    env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
+    image_size: 256
+    port: 8002
+    # scoring_method: Options are
+    #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
+    #   "median score":   median of [face0_score, face1_score, ..., faceN_score]
+    #   Any other string: mean of [face0_class, face1_class, ..., faceN_class], where faceI_class = (faceI_score > threshold)
+    scoring_method: "Default"
+    threshold: 0.5
 
   aasist:

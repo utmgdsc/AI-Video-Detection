@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, confusion_matrix
+import torchvision
 
 # Import from our package
 from deepfake_detector.models import DeepFakeDetector
@@ -55,6 +56,12 @@ def train_epoch(
         images = images.to(device)
         labels = labels.to(device)
 
+        # --- INSERT DEBUGGING CODE HERE ---
+        # import torchvision
+        # torch.save(images.cpu(), "efficientnet_tensor.pt")
+        # torchvision.utils.save_image(images.cpu(), "efficientnet_grid.jpg", normalize=True)
+        # ----------------------------------
+        
         # Forward pass
         optimizer.zero_grad()
         outputs = model(images)
@@ -94,6 +101,11 @@ def validate_epoch(model, dataloader, criterion, device, epoch, logger):
             images = images.to(device)
             labels = labels.to(device)
 
+            # # --- INSERT DEBUGGING CODE HERE ---l   
+            # torch.save(images.cpu(), "efficientnet_tensor.pt")
+            # torchvision.utils.save_image(images.cpu(), "efficientnet_grid.jpg", normalize=True)
+            # # ----------------------------------
+            
             outputs = model(images)
             loss = criterion(outputs, labels)
 
@@ -103,7 +115,7 @@ def validate_epoch(model, dataloader, criterion, device, epoch, logger):
             all_labels.extend(labels.cpu().numpy())
 
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
-
+            
     epoch_loss = running_loss / len(dataloader.dataset)
     epoch_acc = accuracy_score(all_labels, all_preds)
     conf_mat = confusion_matrix(all_labels, all_preds)
