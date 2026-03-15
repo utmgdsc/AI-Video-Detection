@@ -47,77 +47,81 @@ class VideoHandler:
         """
         # 1. Extract frames from video
         frames = video_processor.extract_frames(video_path, sample_rate)
+        details = []
         if frames != []:
             logger.info(f"DEBUG: {len(frames)} frames extracted")
             
         # 2. Detect faces in frames
         faces = video_processor.detect_faces(frames, mtcnn, batch_size)
+
+        individual_scores = {
+            "efficientnet_score": None,
+            "mesonet_score": None,
+            "xceptionnet_score": None,
+        }
         
         # 3. If faces found, run facial analyzer
         if faces is not None and len(faces) > 0:
             logger.info(f"{len(faces)} faces detected")
             logger.info("Start processing faces")
-            
-            efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
-                faces, models_cfg["efficientnet_b1"]
-            )
-            xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
-                faces, models_cfg["xceptionnet"]
-            )
-            mesonet_facial_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
-            individual_scores = {
-                "efficientnet_score": efficientnet_facial_score['score'],
-                "mesonet_score": mesonet_facial_score['score'],
-                "xceptionnet_score": xceptionnet_facial_score['score'],
-            }
-            
-            # logger.info(f"facial_score: {facial_score['score']}")
 
-            # 4. Run image analyzer on frames
-            # TO-DOs: implement general AI video detection
-            # image_score = self.image_analyzer.process(frames)
+            def _run_model(model_key, analyzer, cfg):
+                if cfg is None:
+                    details.append(f"{model_key} config missing")
+                    return None
+                if cfg.get("active", True) is False:
+                    details.append(f"{model_key} inactive")
+                    return None
+                try:
+                    out = analyzer.process(faces, cfg)
+                    if not isinstance(out, dict):
+                        details.append(f"{model_key} output invalid")
+                        return None
+                    score = out.get("score")
+                    if score is None:
+                        details.append(f"{model_key} score missing")
+                        return None
+                    return float(score)
+                except Exception as e:
+                    details.append(f"{model_key} failed: {e}")
+                    return None
 
-            # 5. Combine scores
-            combined_score = self._combine_scores(
-                efficientnet_facial_score["score"],
-                mesonet_facial_score["score"],
-                xceptionnet_facial_score["score"],
+            individual_scores["efficientnet_score"] = _run_model(
+                "efficientnet", self.efficientnet_facial_analyzer, models_cfg.get("efficientnet_b1")
             )
+            individual_scores["xceptionnet_score"] = _run_model(
+                "xceptionnet", self.xceptionnet_facial_analyzer, models_cfg.get("xceptionnet")
+            )
+            individual_scores["mesonet_score"] = _run_model(
+                "mesonet", self.mesonet_facial_analyzer, models_cfg.get("mesonet")
+            )
+
+            combined_score = self._combine_scores(list(individual_scores.values()))
             combined_score_dict = {
                 "facial_score": combined_score,
-                "image_score": 0,
+                "image_score": None,
                 "combined_score": combined_score,
                 "individual_scores": individual_scores,
-                "details": "This is the dictionary for all scores",
+                "details": " | ".join(details) if details else "",
             }
         else:
             # no face detected
             combined_score_dict = {
-                "facial_score": 0,
-                "image_score": 0,
-                "combined_score": 0,
-                "individual_scores": {
-                    "efficientnet_score": 0,
-                    "mesonet_score": 0,
-                    "xceptionnet_score": 0,
-                },
-                "details": "This is the dictionary for all scores",
+                "facial_score": None,
+                "image_score": None,
+                "combined_score": None,
+                "individual_scores": individual_scores,
+                "details": "No faces detected",
             }
 
         return combined_score_dict
 
-    def _combine_scores(
-        self, efficientnet_facial_score, mesonet_facial_score, xceptionnet_facial_score
-    ):
+    def _combine_scores(self, scores):
         """Combine scores from different analyzers."""
-        # TODO: Define combination strategy
-        # Could be: average, weighted average, max, etc.
-
-        return (
-            efficientnet_facial_score * (1 / 3)
-            + mesonet_facial_score * (1 / 3)
-            + xceptionnet_facial_score * (1 / 3)
-        )
+        valid_scores = [s for s in scores if s is not None]
+        if not valid_scores:
+            return None
+        return sum(valid_scores) / len(valid_scores)
     
     def cleanup(self):
         self.mesonet_facial_analyzer.cleanup()

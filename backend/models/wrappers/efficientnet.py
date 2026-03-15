@@ -12,6 +12,7 @@ import sys
 import os
 import torch
 import logging 
+import torch.nn as nn
 # 1. FIX PATH FIRST
 # Get the path to: backend/models/DeepFake_EfficientNet
 project_root = os.path.dirname(__file__)
@@ -30,6 +31,25 @@ from backend.models.DeepFake_EfficientNet.deepfake_detector.models.efficientnet 
 logger = logging.getLogger(__name__)
 
 
+def set_bn_adaptive_mode(model, enabled=True, momentum=None):
+    """
+    Configure Domain Adaptive Batch Normalization (DABN)-style behavior.
+    Keeps Dropout turned off and optionally puts only BN layers in train mode
+    so they adapt running stats to the target-domain inference stream.
+    """
+    model.eval()
+
+    if not enabled:
+        return model
+
+    for module in model.modules():
+        if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)):
+            module.train()
+            if momentum is not None:
+                module.momentum = momentum
+
+    logger.info("DABN mode enabled for EfficientNet BN layers")
+    return model
 
 def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
     """
@@ -54,6 +74,7 @@ def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
 
     efficient_net_model = efficient_net_model.to(device)
     efficient_net_model.eval()
+
     return efficient_net_model
 
 

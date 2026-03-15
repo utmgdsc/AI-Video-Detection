@@ -1,12 +1,23 @@
 # Ensemble Configuration
 device: "cuda" # cuda or cpu
-ensemble_method: "weighted_average" # Options: 'mean', 'weighted_average', 'max_voting'
+ensemble_method: "weighted_voting" # Options: 'mean', 'weighted_average', 'weighted_voting' "majority_voting"
+ensemble_threshold: 0.5
 output_dir: "./outputs/ensemble_results/"
 batch_size: 60
 frame_skip: 30
 margin: 50
 min_face_size: 100
 compare_baseline_accuracy: true
+decision_threshold: 0.5
+
+audio_decision_threshold: 0.5
+video_decision_threshold: 0.5
+
+ensemble_weights:
+  efficientnet: 1.0
+  mesonet: 1.2
+  xceptionnet: 1.2
+  aasist: 0.7
 
 datasets:
   ASVspoof2019_LA:
@@ -26,14 +37,14 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-FakeAudio"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/val/small_test_set/"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
 mtcnn:
   stride: 1
   resize: 1.0
-  margin: 50
+  margin: 200
   min_face_size: 100
   thresholds: [0.6, 0.7, 0.7]
   factor:  0.7
@@ -47,7 +58,7 @@ models:
   efficientnet_b1:
     active: true
     architecture: "efficientnet_b1"
-    weights_path: "./backend/models/DeepFake_EfficientNet/faceforensic_output/outputs/checkpoints/best_model.pth"
+    weights_path: "./backend/models/DeepFake_EfficientNet/faceforensic_output/outputs/checkpoints/data_aug_sbi_best_model.pth"
     num_classes: 2 # Real or Fake
     image_size: 240
     ensemble_weight: 0.5
@@ -59,6 +70,7 @@ models:
 
   xceptionnet:
     weights_path: "./backend/models/XceptionNet-Detector/Deepfake-Detection/output/xception_ff23/best.pkl"
+    threshold: 0.5
 
   mesonet:
     active: true
@@ -75,3 +87,6 @@ models:
     threshold: 0.5
 
   aasist:
+    active: true
+    weights_path: "./backend/models/AASIST/aasist_detector/weights/AASIST.pth"
+    threshold: 0.5

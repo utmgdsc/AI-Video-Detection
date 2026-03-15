@@ -71,6 +71,13 @@ class FacialAnalyzer:
         """
         raise NotImplementedError("Implement process()")
 
+    @staticmethod
+    def get_dabn_settings(model_cfg, default_enabled=False):
+        dabn_cfg = (model_cfg or {}).get("dabn", {})
+        enabled = dabn_cfg.get("enabled", default_enabled)
+        momentum = dabn_cfg.get("momentum")
+        return bool(enabled), momentum
+
 
 class EfficientNetFacialAnalyzer(FacialAnalyzer):
 
@@ -130,6 +137,7 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
             faces_tensor: A properly formatted PyTorch tensor batch of faces.
         """
         if self.model is None:
+            logger.info("loading model")
             self.load_model(model_cfg["weights_path"], self.device)
         
         faces_tensor = self.transform_faces(faces)
@@ -137,6 +145,13 @@ class EfficientNetFacialAnalyzer(FacialAnalyzer):
         
         # Move the batch to the GPU/CPU
         faces_tensor = faces_tensor.to(self.device)
+
+        dabn_enabled, dabn_momentum = self.get_dabn_settings(
+            model_cfg, default_enabled=True
+        )
+        efficientnet.set_bn_adaptive_mode(
+            self.model, enabled=dabn_enabled, momentum=dabn_momentum
+        )
 
         try:
             with torch.no_grad():
@@ -224,6 +239,13 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
         }
         if len(faces) == 0:
             return summary
+
+        dabn_enabled, dabn_momentum = self.get_dabn_settings(
+            model_cfg, default_enabled=False
+        )
+        xception.set_bn_adaptive_mode(
+            self.model, enabled=dabn_enabled, momentum=dabn_momentum
+        )
         
         use_cuda = str(self.device).startswith("cuda")
         scores = []

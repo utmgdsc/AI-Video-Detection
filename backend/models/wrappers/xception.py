@@ -8,6 +8,7 @@ Docs: docs/models/xception/
 import sys
 import torch
 import torch.nn as nn
+import logging
 from pathlib import Path
 
 path = (Path(__file__).resolve().parents[3]
@@ -15,6 +16,8 @@ path = (Path(__file__).resolve().parents[3]
 sys.path.append(str(path))
 from network.models import model_selection
 from detect_from_video import predict_with_model
+
+logger = logging.getLogger(__name__)
 
 # TODO: Implement model loading
 # Reference your docs/models/xception/02-source-and-setup.md for setup instructions
@@ -39,6 +42,26 @@ def load_model(weights_path=None, cuda=True):
     if cuda:
         model = model.cuda()
     model.eval()
+    return model
+
+
+def set_bn_adaptive_mode(model, enabled=True, momentum=None):
+    """
+    Configure Domain Adaptive Batch Normalization (DABN)-style behavior.
+    Keeps non-BN layers in eval mode while optionally adapting BN running stats.
+    """
+    model.eval()
+
+    if not enabled:
+        return model
+
+    for module in model.modules():
+        if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)):
+            module.train()
+            if momentum is not None:
+                module.momentum = momentum
+
+    logger.info("DABN mode enabled for Xception BN layers")
     return model
 
 

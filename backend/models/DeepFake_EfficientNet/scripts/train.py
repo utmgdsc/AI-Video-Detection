@@ -202,7 +202,7 @@ def main():
 
     image_size = 240 if "b1" in args.model else 224
 
-    train_transforms = get_train_transforms(image_size)
+    train_transforms = get_train_transforms(image_size, use_heavy_augmentation=True)
     val_transforms = get_val_transforms(image_size)
 
     # Prepare data configs
