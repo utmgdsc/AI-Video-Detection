@@ -93,13 +93,13 @@ class VideoHandler:
         else:
             # no face detected
             combined_score_dict = {
-                "facial_score": 0,
-                "image_score": 0,
-                "combined_score": 0,
+                "facial_score": None,
+                "image_score": None,
+                "combined_score": None,
                 "individual_scores": {
-                    "efficientnet_score": 0,
-                    "mesonet_score": 0,
-                    "xceptionnet_score": 0,
+                    "efficientnet_score": None,
+                    "mesonet_score": None,
+                    "xceptionnet_score": None,
                 },
                 "details": "This is the dictionary for all scores",
             }

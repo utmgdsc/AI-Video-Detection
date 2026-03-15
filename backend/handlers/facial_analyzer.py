@@ -45,7 +45,8 @@ class FacialAnalyzer:
     def load_model(self, weights_path, device, model_cfg=None):
         """Load the selected model."""
         if self.model_name == "XceptionNet":
-            self.model = xception.load_model(weights_path)
+            cuda = str(device).startswith("cuda")
+            self.model = xception.load_model(weights_path, cuda=cuda)
         elif self.model_name == "MesoNet":
             self.model = mesonet.load_model(model_cfg)
         elif self.model_name == "EfficientNet":
