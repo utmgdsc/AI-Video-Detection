@@ -11,7 +11,7 @@ DeepFake-EfficientNet repository added by the team member.
 import sys
 import os
 import torch
-
+import logging 
 # 1. FIX PATH FIRST
 # Get the path to: backend/models/DeepFake_EfficientNet
 project_root = os.path.dirname(__file__)
@@ -26,6 +26,9 @@ if deepfake_path not in sys.path:
 from backend.models.DeepFake_EfficientNet.deepfake_detector.models.efficientnet import (
     DeepFakeDetector as EfficientNetModel,
 )
+
+logger = logging.getLogger(__name__)
+
 
 
 def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
@@ -44,6 +47,7 @@ def load_model(weights_path=None, model_name="efficientnet-b1", device="cuda"):
     checkpoint = torch.load(weights_path, map_location=device)
 
     if "model_state_dict" in checkpoint:
+        logger.info("loading efficientnet weight")
         efficient_net_model.load_state_dict(checkpoint["model_state_dict"])
     else:
         efficient_net_model.load_state_dict(checkpoint)
