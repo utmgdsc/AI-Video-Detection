@@ -142,7 +142,7 @@ class MesoNetClient:
             self.url + "/load_model",
             json={
                 "architecture": self.architecture,
-                "weights_path": self.weights_path
+                "weights_path": weights_path
             }
         )
         debug(f"Load status: {response.status_code}")
