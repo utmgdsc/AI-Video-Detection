@@ -104,21 +104,22 @@ class DeepfakeDetector:
                 sample_rate=frame_skip,
             )
             results["video_score"] = video_result["combined_score"]
-            results["individual_prediction"]["efficientnet_prediction"] = (
-                False
-                if video_result["individual_scores"]["efficientnet_score"] > 0.5
-                else True
-            )
-            results["individual_prediction"]["mesonet_prediction"] = (
-                False
-                if video_result["individual_scores"]["mesonet_score"] > 0.5
-                else True
-            )
-            results["individual_prediction"]["xceptionnet_prediction"] = (
-                False
-                if video_result["individual_scores"]["xceptionnet_score"] > 0.5
-                else True
-            )
+            if ["video_score"] is not None:
+                results["individual_prediction"]["efficientnet_prediction"] = (
+                    False
+                    if video_result["individual_scores"]["efficientnet_score"] > 0.5
+                    else True
+                )
+                results["individual_prediction"]["mesonet_prediction"] = (
+                    False
+                    if video_result["individual_scores"]["mesonet_score"] > 0.5
+                    else True
+                )
+                results["individual_prediction"]["xceptionnet_prediction"] = (
+                    False
+                    if video_result["individual_scores"]["xceptionnet_score"] > 0.5
+                    else True
+                )
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
             raise
@@ -127,13 +128,18 @@ class DeepfakeDetector:
         results["confidence"] = self._combine_scores(
             results["audio_score"], results["video_score"]
         )
-        if results["audio_score"]: 
+        if results["audio_score"] is not None and ["video_score"] is not None: 
             results["audio_is_real"] = results["audio_score"] < 0.5
             results["video_is_real"] = results["video_score"] < 0.5
             results["is_real"] = results["audio_is_real"] and results["video_is_real"]
-        else:
+        elif results["audio_score"] is None and ["video_score"] is not None:
+            results["audio_is_real"] = None;
             results["video_is_real"] = results["video_score"] < 0.5
             results["is_real"] = results["video_is_real"]
+        else: 
+            results["audio_is_real"] = None
+            results["video_is_real"] = None
+            results["is_real"] = None
         return results
 
     def _combine_scores(self, audio_score, video_score):
@@ -152,27 +158,30 @@ class DeepfakeDetector:
 
 
 def get_video_ground_truth(df, full_video_path):
+    try:
+        # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
+        filename = os.path.basename(full_video_path)
 
-    # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
-    filename = os.path.basename(full_video_path)
+        # 2. Strip custom prefixes like 'FvFa_', 'RvFa_', etc., if they exist
+        clean_filename = re.sub(r"^(FvFa|FvRa|RvFa|RvRa)_", "", filename)
 
-    # 2. Strip custom prefixes like 'FvFa_', 'RvFa_', etc., if they exist
-    # This turns 'FvFa_00004_fake.mp4' back into '00004_fake.mp4'
-    clean_filename = re.sub(r"^(FvFa|FvRa|RvFa|RvRa)_", "", filename)
+        # 3. Search for this clean filename in the CSV's 'path' column
+        matches = df[df["path"] == clean_filename]
 
-    # 3. Search for this clean filename in the CSV's 'path' column
-    matches = df[df["path"] == clean_filename]
+        # Return (None, None) immediately if no match is found
+        if matches.empty:
+            logger.warning(f"Video {clean_filename} not found in metadata. Skipping.")
+            return (None, None)
 
-    if matches.empty:
-        return {"error": f"Video {clean_filename} not found in metadata"}
+        # 4. Grab the first one
+        video_type = matches.iloc[0]["type"]
 
-    # Note: If the filename is '00109.mp4', matches might contain 5 rows
-    # (because 5 different people have a real video named 00109.mp4).
-    # Since they are ALL real videos, it's perfectly safe to just grab the first one.
-    video_type = matches.iloc[0]["type"]
+        return ("FakeVideo" not in video_type, "FakeAudio" not in video_type)
 
-    return ("FakeVideo" not in video_type, "FakeAudio" not in video_type)
-
+    except Exception as e:
+        # Catch any unexpected errors (like missing columns or pandas issues)
+        logger.error(f"Error processing ground truth for {full_video_path}: {e}")
+        return (None, None)
 
 def print_output(result, video_idx):
     logger.info(f"==================================")
@@ -273,6 +282,10 @@ def main():
                 ground_truth_video, ground_truth_audio = get_video_ground_truth(
                     df, full_path
                 )
+                if ground_truth_audio == None or ground_truth_video == None:
+                    continue
+                if result["audio_score"] is None or result["video_score"] is None: 
+                    continue
                 if result["individual_prediction"]["efficientnet_prediction"] == ground_truth_video:
                     models_correct_prediction["efficientnet_correct_prediction"] += 1
                 if result["individual_prediction"]["mesonet_prediction"] == ground_truth_video:
