@@ -104,7 +104,7 @@ class DeepfakeDetector:
                 sample_rate=frame_skip,
             )
             results["video_score"] = video_result["combined_score"]
-            if ["video_score"] is not None:
+            if results["video_score"] is not None:
                 results["individual_prediction"]["efficientnet_prediction"] = (
                     False
                     if video_result["individual_scores"]["efficientnet_score"] > 0.5
@@ -128,7 +128,7 @@ class DeepfakeDetector:
         results["confidence"] = self._combine_scores(
             results["audio_score"], results["video_score"]
         )
-        if results["audio_score"] is not None and ["video_score"] is not None: 
+        if results["audio_score"] is not None and results["video_score"] is not None: 
             results["audio_is_real"] = results["audio_score"] < 0.5
             results["video_is_real"] = results["video_score"] < 0.5
             results["is_real"] = results["audio_is_real"] and results["video_is_real"]
