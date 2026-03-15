@@ -125,11 +125,24 @@ def detect_faces(frames, mtcnn, batch_size):
             if boxes is None:
                 continue
                 
+            h, w = frame.shape[:2]
+            
             for box in boxes:
                 box = [int(b) for b in box]
+                x1, y1, x2, y2 = box
+                
+                # Clamp bbox coords to frame bounds 0 <= x1 < x2 <= w, 0 <= y1 < y2 <= h
+                x1 = max(min(x1, w), 0)
+                x2 = max(min(x2, w), 0)
+                y1 = max(min(y1, h), 0)
+                y2 = max(min(y2, h), 0)
+                
+                # If clamped box is invalid
+                if x1 >= x2 or y1 >= y2:
+                    continue
                 
                 # Manual numpy crop: frame[y1:y2, x1:x2]
-                face = frame[box[1]:box[3], box[0]:box[2]]
+                face = frame[y1:y2, x1:x2]
                 
                 # Validate face size (filter out garbage)
                 if len(face) == 0 or face.shape[0] < 10 or face.shape[1] < 10:
