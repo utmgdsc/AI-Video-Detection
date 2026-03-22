@@ -83,6 +83,13 @@ class DeepfakeDetector:
                     if video_result["individual_scores"]["xceptionnet_score"] > 0.5
                     else True
                 )
+
+                # Include raw numeric scores for UI display
+                results["individual_scores"] = {
+                    "efficientnet_score": float(efficientnet_score) if efficientnet_score is not None else None,
+                    "mesonet_score": float(mesonet_score) if mesonet_score is not None else None,
+                    "xceptionnet_score": float(xceptionnet_score) if xceptionnet_score is not None else None,
+                }
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
             raise

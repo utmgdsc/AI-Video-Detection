@@ -36,10 +36,10 @@ def load_model(weights_path=None, cuda=True):
     """
     model = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     if weights_path:
-        model.load_state_dict(torch.load(weights_path))
+        model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
     if isinstance(model, torch.nn.DataParallel):
         model = model.module
-    if cuda:
+    if cuda and torch.cuda.is_available():
         model = model.cuda()
     model.eval()
     return model

@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import tensorflow as tf
 
+# TF2 compatibility shim for TF1-style code
+tf.compat.v1.disable_eager_execution()
+
 from classifiers import *
 
 PRINT_DEBUGS = False
@@ -57,8 +60,18 @@ def load_model(data: LoadModel):
     model = ARCHITECTURE_MAP[data.architecture]()
 
     debug(f"Loading weight on path: '{data.weights_path}'")
-    model.load(data.weights_path)
-    graph = tf.get_default_graph()
+    try:
+        model.load(data.weights_path)
+        graph = tf.compat.v1.get_default_graph()
+        loaded_architecture = data.architecture
+        loaded_weights_path = data.weights_path
+    except Exception as exc:
+        # Keep API contract stable for caller and avoid hard 500 crashes.
+        model = None
+        graph = None
+        loaded_architecture = None
+        loaded_weights_path = None
+        return {"success": False, "error": str(exc)}
 
     debug(f"MODEL SUCCESSFULLY LOADED.")
     return {"success": True}
@@ -82,7 +95,7 @@ def process(data: Process):
     if images.max() > 1.0:
         images = images / 255.0
 
-    with graph.as_default():
+    with graph.as_default():  # type: ignore[union-attr]
         debug(f"BEGIN MAKING PREDICTIONS...")
         preds = model.predict(images).tolist()
 
