@@ -8,6 +8,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import shutil
 from typing import Any
 
 import yaml
@@ -184,9 +185,16 @@ class AppSettings:
 
         if "mesonet" in models and isinstance(models["mesonet"], dict):
             mesonet_env = models["mesonet"].get("env_path")
-            resolved_env = _resolve_path(mesonet_env, repo_root, config_dir)
-            if resolved_env is not None:
-                models["mesonet"]["env_path"] = str(resolved_env)
+            if mesonet_env:
+                env_value = str(mesonet_env).strip()
+                # If this is an executable token (e.g., "python3"), keep as-is
+                # for PATH lookup at runtime/validation.
+                if any(ch in env_value for ch in ["/", "\\"]) or env_value.startswith("."):
+                    resolved_env = _resolve_path(env_value, repo_root, config_dir)
+                    if resolved_env is not None:
+                        models["mesonet"]["env_path"] = str(resolved_env)
+                else:
+                    models["mesonet"]["env_path"] = env_value
 
         output_dir = _resolve_path(raw.get("output_dir", "./outputs/ensemble_results/"), repo_root, config_dir)
         temp_dir = _resolve_path(raw.get("temp_dir", "./outputs/tmp/"), repo_root, config_dir)
@@ -263,11 +271,23 @@ class AppSettings:
                     "models.mesonet.weights_path",
                     errors,
                 )
-                _validate_existing_file(
-                    meso_cfg.get("env_path"),
-                    "models.mesonet.env_path",
-                    errors,
-                )
+                mesonet_env_path = meso_cfg.get("env_path")
+                if not mesonet_env_path:
+                    errors.append("models.mesonet.env_path is required")
+                else:
+                    env_value = str(mesonet_env_path)
+                    # Support both absolute interpreter paths and executable names
+                    # such as "python3" for portable setups.
+                    if any(ch in env_value for ch in ["/", "\\"]) or env_value.startswith("."):
+                        _validate_existing_file(
+                            env_value,
+                            "models.mesonet.env_path",
+                            errors,
+                        )
+                    elif shutil.which(env_value) is None:
+                        errors.append(
+                            f"models.mesonet.env_path executable not found in PATH: {env_value}"
+                        )
 
             if self.compare_baseline_accuracy:
                 metadata_path = self.datasets.get("FakeAVCeleb", {}).get("metadata")

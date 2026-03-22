@@ -54,6 +54,24 @@ Download pretrained weights and place in `weights/`:
 | MesoNet | [TBD] | `weights/mesonet.pth` |
 | AASIST | [TBD] | `weights/aasist.pth` |
 
+Current `web-app` branch includes the required ensemble weights in the repository `weights/` directory:
+
+- `weights/efficientnet_best_model.pth`
+- `weights/xception_ff23_best.pkl`
+- `weights/meso4_weight_refit_val_acc.h5`
+- `weights/aasist_baseline.pt`
+
+The default config `backend/config/ensemble.yaml` points to these portable, repo-relative paths.
+
+### 3.1 MesoNet runtime environment
+
+MesoNet is served from a separate Python process and is pinned to older dependencies.
+Use a Python 3.6 environment with:
+
+`backend/models/MesoNet/requirements-mesonet.txt`
+
+If needed, set `AIVD_MESONET_ENV_PATH` to the interpreter path for that environment.
+
 ### 4. Run
 
 ```bash

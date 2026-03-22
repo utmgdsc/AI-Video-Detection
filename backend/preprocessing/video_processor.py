@@ -164,25 +164,85 @@ def separate_audio(video_path, output_path):
     Returns:
         str: Path to extracted audio file
     """
-    # TODO: Implement using ffmpeg or moviepy
-    # Example with moviepy:
-    # from moviepy.editor import VideoFileClip
-    # video = VideoFileClip(video_path)
-    # video.audio.write_audiofile(output_path)
-
     video_path = str(video_path)
     output_path = str(output_path)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-i", video_path,
-        "-vn",                 # no video
-        "-ac", "1",            # mono
-        "-ar", "16000",        # 16kHz
-        "-f", "wav",
+    def _has_audio_stream(path):
+        """Return True when an audio stream exists, False otherwise."""
+        probe_cmd = [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "a",
+            "-show_entries",
+            "stream=index",
+            "-of",
+            "csv=p=0",
+            path,
+        ]
+        try:
+            result = subprocess.run(
+                probe_cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as exc:
+            raise RuntimeError("ffprobe is required for audio stream detection") from exc
+
+        if result.returncode != 0:
+            return False
+        return bool(result.stdout.strip())
+
+    if not _has_audio_stream(video_path):
+        raise ValueError("No audio stream found in input video")
+
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-map",
+        "0:a:0",
+        "-vn",
+        "-acodec",
+        "pcm_s16le",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
         output_path,
     ]
-    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    extraction_errors = []
+    try:
+        subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as exc:
+        extraction_errors.append(f"ffmpeg extraction failed: {exc}")
+
+        # Fallback for environments where ffmpeg args or build differ.
+        try:
+            from moviepy.editor import VideoFileClip
+
+            with VideoFileClip(video_path) as clip:
+                if clip.audio is None:
+                    raise ValueError("No audio stream found in input video")
+                clip.audio.write_audiofile(
+                    output_path,
+                    fps=16000,
+                    nbytes=2,
+                    codec="pcm_s16le",
+                    ffmpeg_params=["-ac", "1"],
+                    logger=None,
+                )
+        except Exception as fallback_exc:
+            extraction_errors.append(f"moviepy fallback failed: {fallback_exc}")
+            raise RuntimeError("; ".join(extraction_errors))
+
+    if not Path(output_path).is_file() or Path(output_path).stat().st_size == 0:
+        raise RuntimeError("Audio extraction produced an empty output file")
+
     return output_path

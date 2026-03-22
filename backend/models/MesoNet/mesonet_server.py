@@ -21,6 +21,8 @@ app = FastAPI()
 
 model = None
 graph = None
+loaded_architecture = None
+loaded_weights_path = None
 
 ARCHITECTURE_MAP = {
     "Meso1": Meso1,
@@ -43,7 +45,16 @@ def load_model(data: LoadModel):
         weights_path: string
         }
     """
-    global model, graph
+    global model, graph, loaded_architecture, loaded_weights_path
+
+    # Reuse already loaded model to avoid TensorFlow 1.x graph/thread reload issues.
+    if (
+        model is not None
+        and graph is not None
+        and loaded_architecture == data.architecture
+        and loaded_weights_path == data.weights_path
+    ):
+        return {"success": True, "reused": True}
 
     debug("Clearing previous model session (no affect if no models were loaded before).")
     # Every time we load a new model, we must clear any potential previous models
@@ -57,8 +68,18 @@ def load_model(data: LoadModel):
     model = ARCHITECTURE_MAP[data.architecture]()
 
     debug(f"Loading weight on path: '{data.weights_path}'")
-    model.load(data.weights_path)
-    graph = tf.get_default_graph()
+    try:
+        model.load(data.weights_path)
+        graph = tf.get_default_graph()
+        loaded_architecture = data.architecture
+        loaded_weights_path = data.weights_path
+    except Exception as exc:
+        # Keep API contract stable for caller and avoid hard 500 crashes.
+        model = None
+        graph = None
+        loaded_architecture = None
+        loaded_weights_path = None
+        return {"success": False, "error": str(exc)}
 
     debug(f"MODEL SUCCESSFULLY LOADED.")
     return {"success": True}

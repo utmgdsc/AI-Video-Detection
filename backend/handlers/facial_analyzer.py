@@ -11,9 +11,6 @@ import numpy as np
 import torch.nn.functional as F
 from backend.models.wrappers import xception, mesonet, efficientnet
 from backend.preprocessing import image_processor
-from backend.models.DeepFake_EfficientNet.deepfake_detector.data import (
-    get_val_transforms,
-)
 from backend.models.wrappers.xception import predict_with_model
 import logging
 import numpy as np
@@ -300,7 +297,7 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         score = self.scoring_method(results, threshold, score_method)
         
         summary = {
-            "score": score,
+            "score": float(score),
             "per_frame_score": results,
             "details": "This contains MesoNet results.",
         }
@@ -310,11 +307,11 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
     def scoring_method(self, results, threshold, option):
         match option:
             case "mean score":
-                return np.mean(results)
+                return float(np.mean(results))
             case "median score":
-                return np.median(results)
+                return float(np.median(results))
             case _:
-                return np.mean(results > threshold)
+                return float(np.mean(results > threshold))
 
     def cleanup(self):
         """

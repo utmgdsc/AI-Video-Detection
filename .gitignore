@@ -53,3 +53,10 @@ logs/
 # backend/models/MesoNet/
 backend/models/AASIST/
 backend/dataset/
+
+# Allowlist: required ensemble weight artifacts committed for portable runs
+!weights/
+!weights/efficientnet_best_model.pth
+!weights/xception_ff23_best.pkl
+!weights/meso4_weight_refit_val_acc.h5
+!weights/aasist_baseline.pt

@@ -138,20 +138,48 @@ class MesoNetClient:
         if weights_path is None:
             weights_path = self.weights_path
 
-        response = requests.post(
-            self.url + "/load_model",
-            json={
-                "architecture": self.architecture,
-                "weights_path": weights_path
-            }
-        )
+        payload = {
+            "architecture": self.architecture,
+            "weights_path": weights_path,
+        }
+
+        response = requests.post(self.url + "/load_model", json=payload)
         debug(f"Load status: {response.status_code}")
         debug(f"Load text: {response.text}")
+
+        success = False
         if response.status_code == 200:
+            try:
+                success = bool(response.json().get("success", True))
+            except Exception:
+                success = True
+
+        if success:
             debug("Model loaded successfully.")
             return self
-        debug("Model failed to load.")
-        # Else model failed to load
+
+        # If server is stale/broken, restart once and retry loading.
+        debug("Model failed to load. Restarting server and retrying once...")
+        self.stop_server()
+        self.start_server()
+        self.wait_until_ready()
+
+        retry_response = requests.post(self.url + "/load_model", json=payload)
+        debug(f"Retry load status: {retry_response.status_code}")
+        debug(f"Retry load text: {retry_response.text}")
+
+        retry_success = False
+        if retry_response.status_code == 200:
+            try:
+                retry_success = bool(retry_response.json().get("success", True))
+            except Exception:
+                retry_success = True
+
+        if retry_success:
+            debug("Model loaded successfully after restart.")
+            return self
+
+        debug("Model failed to load after retry.")
         return None
         
 

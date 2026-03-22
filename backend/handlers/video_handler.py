@@ -57,18 +57,43 @@ class VideoHandler:
         if faces is not None and len(faces) > 0:
             logger.info(f"{len(faces)} faces detected")
             logger.info("Start processing faces")
-            
-            efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
-                faces, models_cfg["efficientnet_b1"]
-            )
-            xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
-                faces, models_cfg["xceptionnet"]
-            )
-            mesonet_facial_score = self.mesonet_facial_analyzer.process(faces, models_cfg["mesonet"])
+            details = []
+
+            efficientnet_score = None
+            xceptionnet_score = None
+            mesonet_score = None
+
+            try:
+                efficientnet_facial_score = self.efficientnet_facial_analyzer.process(
+                    faces, models_cfg["efficientnet_b1"]
+                )
+                efficientnet_score = efficientnet_facial_score["score"]
+            except Exception as e:
+                logger.exception(f"EfficientNet inference failed: {e}")
+                details.append(f"EfficientNet failed: {e}")
+
+            try:
+                xceptionnet_facial_score = self.xceptionnet_facial_analyzer.process(
+                    faces, models_cfg["xceptionnet"]
+                )
+                xceptionnet_score = xceptionnet_facial_score["score"]
+            except Exception as e:
+                logger.exception(f"XceptionNet inference failed: {e}")
+                details.append(f"XceptionNet failed: {e}")
+
+            try:
+                mesonet_facial_score = self.mesonet_facial_analyzer.process(
+                    faces, models_cfg["mesonet"]
+                )
+                mesonet_score = mesonet_facial_score["score"]
+            except Exception as e:
+                logger.exception(f"MesoNet inference failed: {e}")
+                details.append(f"MesoNet failed: {e}")
+
             individual_scores = {
-                "efficientnet_score": efficientnet_facial_score['score'],
-                "mesonet_score": mesonet_facial_score['score'],
-                "xceptionnet_score": xceptionnet_facial_score['score'],
+                "efficientnet_score": efficientnet_score,
+                "mesonet_score": mesonet_score,
+                "xceptionnet_score": xceptionnet_score,
             }
             
             # logger.info(f"facial_score: {facial_score['score']}")
@@ -79,16 +104,16 @@ class VideoHandler:
 
             # 5. Combine scores
             combined_score = self._combine_scores(
-                efficientnet_facial_score["score"],
-                mesonet_facial_score["score"],
-                xceptionnet_facial_score["score"],
+                efficientnet_score,
+                mesonet_score,
+                xceptionnet_score,
             )
             combined_score_dict = {
                 "facial_score": combined_score,
                 "image_score": 0,
                 "combined_score": combined_score,
                 "individual_scores": individual_scores,
-                "details": "This is the dictionary for all scores",
+                "details": " | ".join(details) if details else "All facial models succeeded",
             }
         else:
             # no face detected
@@ -110,14 +135,18 @@ class VideoHandler:
         self, efficientnet_facial_score, mesonet_facial_score, xceptionnet_facial_score
     ):
         """Combine scores from different analyzers."""
-        # TODO: Define combination strategy
-        # Could be: average, weighted average, max, etc.
-
-        return (
-            efficientnet_facial_score * (1 / 3)
-            + mesonet_facial_score * (1 / 3)
-            + xceptionnet_facial_score * (1 / 3)
-        )
+        available_scores = [
+            s
+            for s in [
+                efficientnet_facial_score,
+                mesonet_facial_score,
+                xceptionnet_facial_score,
+            ]
+            if s is not None
+        ]
+        if not available_scores:
+            return None
+        return sum(available_scores) / len(available_scores)
     
     def cleanup(self):
         self.mesonet_facial_analyzer.cleanup()

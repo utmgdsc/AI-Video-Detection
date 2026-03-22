@@ -130,6 +130,10 @@ dmypy.json
 
 temp/
 outputs/
+!faceforensic_output/
+!faceforensic_output/outputs/
+!faceforensic_output/outputs/checkpoints/
+!faceforensic_output/outputs/checkpoints/best_model.pth
 ff_extracted/
 all_model_test_output/
 easyAnimate_leave_out_outputs/

@@ -29,7 +29,7 @@ class DeepfakeDetector:
     def __init__(self, settings: AppSettings, device: str = "cuda"):
         self.settings = settings
         self.device = device
-        aasist_cfg = self.settings.models.get("aasist", {})
+        aasist_cfg = self.settings.models.get("aasist") or {}
         self.audio_handler = AudioHandler(weights_path=aasist_cfg.get("weights_path"))
         self.video_handler = VideoHandler(device)
 
@@ -56,7 +56,11 @@ class DeepfakeDetector:
             )
             os.unlink(audio_path)
         except Exception as e:
-            results["details"] += f"Audio analysis skipped: {e}\n"
+            message = str(e)
+            if "No audio stream found" in message:
+                results["details"] += "Audio analysis skipped: no audio stream in input video.\n"
+            else:
+                results["details"] += f"Audio analysis skipped: {message}\n"
 
         # 2. Analyze video
         try:
@@ -70,18 +74,24 @@ class DeepfakeDetector:
             )
             results["video_score"] = video_result["combined_score"]
             if results["video_score"] is not None:
+                efficientnet_score = video_result["individual_scores"].get("efficientnet_score")
+                mesonet_score = video_result["individual_scores"].get("mesonet_score")
+                xceptionnet_score = video_result["individual_scores"].get("xceptionnet_score")
+
                 results["individual_prediction"]["efficientnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["efficientnet_score"] > 0.5
-                    else True
+                    None
+                    if efficientnet_score is None
+                    else (False if efficientnet_score > 0.5 else True)
                 )
                 results["individual_prediction"]["mesonet_prediction"] = (
-                    False if video_result["individual_scores"]["mesonet_score"] > 0.5 else True
+                    None
+                    if mesonet_score is None
+                    else (False if mesonet_score > 0.5 else True)
                 )
                 results["individual_prediction"]["xceptionnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["xceptionnet_score"] > 0.5
-                    else True
+                    None
+                    if xceptionnet_score is None
+                    else (False if xceptionnet_score > 0.5 else True)
                 )
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
@@ -90,17 +100,26 @@ class DeepfakeDetector:
         # 3. Combine scores
         results["confidence"] = self._combine_scores(results["audio_score"], results["video_score"])
         if results["audio_score"] is not None and results["video_score"] is not None:
-            results["audio_is_real"] = results["audio_score"] < 0.5
-            results["video_is_real"] = results["video_score"] < 0.5
-            results["is_real"] = results["audio_is_real"] and results["video_is_real"]
+            results["audio_is_real"] = bool(results["audio_score"] < 0.5)
+            results["video_is_real"] = bool(results["video_score"] < 0.5)
+            results["is_real"] = bool(results["audio_is_real"] and results["video_is_real"])
         elif results["audio_score"] is None and results["video_score"] is not None:
             results["audio_is_real"] = None
-            results["video_is_real"] = results["video_score"] < 0.5
-            results["is_real"] = results["video_is_real"]
+            results["video_is_real"] = bool(results["video_score"] < 0.5)
+            results["is_real"] = bool(results["video_is_real"])
         else:
             results["audio_is_real"] = None
             results["video_is_real"] = None
             results["is_real"] = None
+
+        # Normalize scalar types for API JSON serialization.
+        if results["audio_score"] is not None:
+            results["audio_score"] = float(results["audio_score"])
+        if results["video_score"] is not None:
+            results["video_score"] = float(results["video_score"])
+        if results["confidence"] is not None:
+            results["confidence"] = float(results["confidence"])
+
         return results
 
     def _combine_scores(self, audio_score: float | None, video_score: float | None) -> float | None:
