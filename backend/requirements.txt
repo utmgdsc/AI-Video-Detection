@@ -9,6 +9,7 @@ torchvision>=0.15.0
 # Image/Video processing
 opencv-python>=4.8.0
 Pillow>=10.0.0
+albumentations>=1.4.0
 
 # Audio processing
 librosa>=0.10.0
@@ -24,7 +25,13 @@ moviepy>=1.0.3
 
 # Optional: for better face detection
 # dlib>=19.24.0
-# facenet-pytorch>=2.5.0
+facenet-pytorch>=2.5.0
+
+# Data processing
+pandas>=2.0.0
+
+# HTTP client (used by MesoNet client/server bridge)
+requests>=2.31.0
 
 #Optional: for plotting accuracy
 matplotlib>=3.7.0
@@ -35,3 +42,7 @@ PyYAML==6.0.1
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.9
+
+# NOTE:
+# MesoNet runs in a separate legacy Python 3.6 environment.
+# See backend/models/MesoNet/requirements-mesonet.txt
