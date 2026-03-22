@@ -30,3 +30,8 @@ moviepy>=1.0.3
 matplotlib>=3.7.0
 # Use yaml file to define configuration for the ensemble
 PyYAML==6.0.1
+
+# API backend (Step 3)
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
