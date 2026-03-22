@@ -24,7 +24,14 @@ moviepy>=1.0.3
 
 # Optional: for better face detection
 # dlib>=19.24.0
-# facenet-pytorch>=2.5.0
+facenet-pytorch>=2.5.0
+efficientnet_pytorch>=0.7.0
+
+# Data processing
+pandas>=2.0.0
+
+# HTTP client (used by MesoNet client/server bridge)
+requests>=2.31.0
 
 #Optional: for plotting accuracy
 matplotlib>=3.7.0
