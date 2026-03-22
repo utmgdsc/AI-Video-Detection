@@ -19,4 +19,4 @@
 
 - Add rows as you discover more datasets
 - Fill in all columns before making a final decision
-- Discuss findings in weekly meetings
+- Discuss findings in project syncs

@@ -1,6 +1,6 @@
-# 10-Week Project Plan
+# Project Roadmap
 
-## Week 1: Setup + Survey
+## Phase 1: Setup + Survey
 
 **Goals:**
 - Survey dataset candidates
@@ -9,11 +9,11 @@
 
 **Deliverables:**
 - `docs/datasets/candidates.md` — initial dataset table
-- Local environment working for each team member
+- Local environment working for contributors
 
 ---
 
-## Week 2: Dataset Selection + Evaluation Protocol
+## Phase 2: Dataset Selection + Evaluation Protocol
 
 **Goals:**
 - Finalize dataset choice

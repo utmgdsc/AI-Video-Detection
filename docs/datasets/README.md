@@ -10,7 +10,7 @@ When researching potential datasets for deepfake/manipulated video detection, do
 |-------|-------------|
 | **Name** | Dataset name |
 | **Link** | URL to dataset page or paper |
-| **License/Terms** | Usage restrictions, academic-only, commercial OK, etc. |
+| **License/Terms** | Usage restrictions, research-only, commercial OK, etc. |
 | **Size** | Number of videos/images, total GB if known |
 | **Labels** | What labels are provided (real/fake, manipulation type, etc.) |
 | **Modality** | Video, frames, audio, or combination |
@@ -23,7 +23,7 @@ When researching potential datasets for deepfake/manipulated video detection, do
 
 When comparing candidates, prioritize:
 
-1. **License compatibility** — Can we use it for academic research?
+1. **License compatibility** — Can we use it for the intended research/deployment context?
 2. **Label quality** — Are labels reliable and well-documented?
 3. **Size** — Large enough for meaningful experiments, small enough to handle
 4. **Relevance** — Does it cover the manipulation types we want to detect?

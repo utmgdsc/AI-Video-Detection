@@ -1,7 +1,7 @@
 """
 XceptionNet model for deepfake detection.
 
-Team member: Lin Wei/Marco Lin
+Contributor: Lin Wei/Marco Lin
 Docs: docs/models/xception/
 """
 

@@ -2,14 +2,13 @@
 
 ## Branch Naming Convention
 
-Use the format: `SCRUM-XX-short-description`
+Use descriptive branch names:
 
 **Examples:**
-- `SCRUM-10-xception`
-- `SCRUM-11-mesonet`
-- `SCRUM-12-efficientnet`
-- `SCRUM-13-aasist`
-- `SCRUM-14-dataset-selection`
+- `feature/xception-integration`
+- `feature/mesonet-baseline`
+- `docs/dataset-selection`
+- `experiment/audio-ablation`
 
 ## Git Workflow
 
@@ -23,7 +22,7 @@ git pull origin main
 ### 2. Create your branch
 
 ```bash
-git checkout -b SCRUM-XX-short-description
+git checkout -b feature/short-description
 ```
 
 ### 3. Make your changes
@@ -34,13 +33,13 @@ Edit files, add documentation, run experiments, etc.
 
 ```bash
 git add .
-git commit -m "SCRUM-XX <short message>"
+git commit -m "feat: <short message>"
 ```
 
 ### 5. Push your branch
 
 ```bash
-git push -u origin SCRUM-XX-short-description
+git push -u origin feature/short-description
 ```
 
 ### 6. Open a Pull Request
@@ -51,17 +50,17 @@ git push -u origin SCRUM-XX-short-description
 ## Pull Request Rules
 
 ### One PR per topic
-- One PR per Jira ticket
+- One PR per issue/topic
 - One PR per model if documenting a model
 
 ### PR title format
 ```
-SCRUM-XX: <what you did>
+[area] <what you changed>
 ```
 
 **Examples:**
-- `SCRUM-10: Add XceptionNet model notes and setup guide`
-- `SCRUM-14: Document dataset selection rationale`
+- `[docs] Add XceptionNet model notes and setup guide`
+- `[datasets] Document dataset selection rationale`
 
 ### PR description must include
 - Summary of changes
@@ -80,4 +79,4 @@ Before requesting review, ensure:
 
 ## Questions?
 
-Bring up any workflow questions in the weekly meeting or Slack.
+Open a GitHub issue/discussion or ask in Slack.

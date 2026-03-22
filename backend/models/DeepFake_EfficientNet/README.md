@@ -405,7 +405,7 @@ Stay up-to-date with cutting-edge deepfake detection research and implementation
 
 ```
 ⚠️ Generalization Gap
-   └─ Academic benchmarks vs real-world deepfakes
+   └─ Benchmark datasets vs real-world deepfakes
 
 ⚠️ Adversarial Robustness
    └─ Detection methods vs advancing generation techniques

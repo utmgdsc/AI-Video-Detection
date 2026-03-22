@@ -1,11 +1,11 @@
 """
 EfficientNet model wrapper for deepfake detection.
 
-Team member: Wu Hung Mao/Marvin Wu
+Contributor: Wu Hung Mao/Marvin Wu
 Docs: docs/models/efficientnet/
 
 This is a THIN WRAPPER that provides a standard interface to the
-DeepFake-EfficientNet repository added by the team member.
+DeepFake-EfficientNet repository added by the contributor.
 """
 
 import sys

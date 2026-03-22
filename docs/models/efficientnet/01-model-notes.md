@@ -78,5 +78,5 @@ Put images in ./assets and reference them like:
 
 ## Open questions
 
-- Questions to ask in weekly meeting:
+- Questions for the next project sync:
 - Things to verify:

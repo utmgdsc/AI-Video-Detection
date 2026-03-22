@@ -1,7 +1,7 @@
 """
 MesoNet model for deepfake detection.
 
-Team member: Frank Bi
+Contributor: Frank Bi
 Docs: docs/models/mesonet/
 """
 import sys
