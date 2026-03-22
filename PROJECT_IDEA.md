@@ -3,6 +3,7 @@
 ## Motivation
 
 Deepfakes and AI-generated manipulated videos pose significant threats to information integrity, personal privacy, and public trust. As generative AI techniques become more sophisticated and accessible, the ability to create convincing fake videos has outpaced detection capabilities. This project aims to investigate and compare state-of-the-art detection methods to contribute to the ongoing effort to identify manipulated media.
+This repository is maintained as both a research workspace and an implementation showcase.
 
 ## Problem Statement
 
@@ -20,12 +21,12 @@ Given a video (or extracted frames), determine whether the content has been arti
 | Consistent documentation | Each model has standardized notes and setup guides |
 | Experiments + results comparison | Train/evaluate each model; results table with metrics |
 | Final report + slides/presentation | Written report summarizing findings; presentation slides |
-| Peer evaluation | End-of-project peer evaluation |
+| Reproducibility review | Checklist-based review of setup steps and reported results |
 
 ## Approach Overview
 
 1. **Dataset selection**: Evaluate candidate datasets (FaceForensics++, Celeb-DF, DFDC, etc.) based on size, license, label quality, and relevance
-2. **Model investigation**: Each team member investigates one model:
+2. **Model investigation**: Contributors investigate one model each:
    - XceptionNet
    - EfficientNet-based detectors
    - MesoNet

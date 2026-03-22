@@ -33,7 +33,7 @@ pip install -r backend/requirements.txt
 
 ### 2. Add your model code
 
-Each team member adds their full model repository:
+Each contributor can add their full model repository:
 
 ```bash
 cd backend/models/
@@ -88,7 +88,7 @@ backend/
 └── requirements.txt
 ```
 
-## For Team Members
+## For Contributors
 
 ### Adding Your Model
 
@@ -98,16 +98,15 @@ backend/
 4. **Test** locally with sample videos
 5. **Commit** wrappers and docs (NOT large repos or weights)
 
-### Timeline
+### Suggested Integration Phases
 
-- **Week 1-6:** Focus on documentation and getting models working
-- **Week 7-8:** Create wrappers and integrate into pipeline
-- **Week 9:** Test end-to-end pipeline
-- **Week 10:** Final testing and documentation
+- **Phase 1:** Documentation and standalone model bring-up
+- **Phase 2:** Wrapper implementation and pipeline integration
+- **Phase 3:** End-to-end validation and result reporting
 
 ## Why Hybrid Structure?
 
-We use a **hybrid approach** where each team member:
+We use a **hybrid approach** where each contributor:
 - Keeps their full working model code
 - Adds thin wrappers for the unified pipeline
 

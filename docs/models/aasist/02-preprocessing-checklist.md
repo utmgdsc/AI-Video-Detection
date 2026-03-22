@@ -1,6 +1,6 @@
 # PR Checklist — Dataset Preprocessing
 
-Each student should submit a PR this week with their dataset preprocessing code and documentation. Use this checklist to ensure everything is included.
+Each contributor should submit a PR for this preprocessing milestone with their dataset preprocessing code and documentation. Use this checklist to ensure everything is included.
 
 ## Required Sections in PR Description
 
@@ -59,4 +59,4 @@ backend/models/[YOUR_MODEL]/
 - [ ] Dataset is correctly split
 - [ ] Documentation is clear and complete
 - [ ] No large files committed
-- [ ] Ready for another team member to follow the guide and reproduce the setup
+- [ ] Ready for another contributor to follow the guide and reproduce the setup

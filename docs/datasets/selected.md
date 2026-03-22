@@ -17,7 +17,7 @@
 ## License Confirmation
 
 - License type: `cc-by-4.0`
-- Academic use allowed: `Yes`
+- Research use allowed: `Yes`
 - Any restrictions: `Attribution Required`
 - Terms link: `[https://huggingface.co/datasets/AIGVDBench/AIGVDBench](https://huggingface.co/datasets/AIGVDBench/AIGVDBench)`
 

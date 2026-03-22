@@ -1,7 +1,7 @@
 """
 AASIST model for audio deepfake detection.
 
-Team member: Laiba Khan
+Contributor: Laiba Khan
 Docs: docs/models/aasist/
 """
 
