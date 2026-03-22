@@ -93,6 +93,13 @@ class DeepfakeDetector:
                     if xceptionnet_score is None
                     else (False if xceptionnet_score > 0.5 else True)
                 )
+
+                # Include raw numeric scores for UI display
+                results["individual_scores"] = {
+                    "efficientnet_score": float(efficientnet_score) if efficientnet_score is not None else None,
+                    "mesonet_score": float(mesonet_score) if mesonet_score is not None else None,
+                    "xceptionnet_score": float(xceptionnet_score) if xceptionnet_score is not None else None,
+                }
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
             raise
@@ -119,6 +126,11 @@ class DeepfakeDetector:
             results["video_score"] = float(results["video_score"])
         if results["confidence"] is not None:
             results["confidence"] = float(results["confidence"])
+
+        # Expose AASIST score alongside other individual scores
+        if "individual_scores" not in results:
+            results["individual_scores"] = {}
+        results["individual_scores"]["aasist_score"] = results["audio_score"]
 
         return results
 

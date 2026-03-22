@@ -88,7 +88,7 @@ models:
     #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
     #   "median score":   median of [face0_score, face1_score, ..., faceN_score]
     #   Any other string: mean of [face0_class, face1_class, ..., faceN_class], where faceI_class = (faceI_score > threshold)
-    scoring_method: "Default"
+    scoring_method: "mean score"
     threshold: 0.5
 
   aasist:
