@@ -26,6 +26,7 @@ moviepy>=1.0.3
 # Optional: for better face detection
 # dlib>=19.24.0
 facenet-pytorch>=2.5.0
+efficientnet_pytorch>=0.7.0
 
 # Data processing
 pandas>=2.0.0
