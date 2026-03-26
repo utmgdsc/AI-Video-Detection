@@ -15,6 +15,9 @@ import argparse
 import yaml
 import torch
 from facenet_pytorch import MTCNN
+import pickle
+import numpy as np
+import pandas as pd
 
 from backend.handlers.audio_handler import AudioHandler
 from backend.handlers.video_handler import VideoHandler
@@ -51,6 +54,30 @@ class DeepfakeDetector:
         )
 
         self.video_handler = VideoHandler(device)
+
+        # -------------------------
+        # LOAD STACKING MODEL
+        # -------------------------
+        self.stacking_model = None
+
+        fusion_method = self.config.get("ensemble_method", "mean")
+        stacking_model_path = self.config.get("stacking_model_path")
+
+        if fusion_method == "stacking":
+            if stacking_model_path and os.path.exists(stacking_model_path):
+                try:
+                    with open(stacking_model_path, "rb") as f:
+                        self.stacking_model = pickle.load(f)
+                    logger.info(f"Loaded stacking model from {stacking_model_path}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load stacking model: {e}. Falling back to mean fusion."
+                    )
+            else:
+                logger.warning(
+                    "Stacking selected but stacking model path is missing or invalid. "
+                    "Falling back to mean fusion."
+                )
 
     def analyze(
         self,
@@ -132,9 +159,14 @@ class DeepfakeDetector:
         # ENSEMBLE
         # -------------------------
 
-        confidence = self._mean_fusion(
-            [results["audio_score"], results["video_score"]]
-        )
+        fusion_method = self.config.get("ensemble_method", "mean")
+
+        if fusion_method == "stacking":
+            confidence = self._stacking_fusion(results["individual_scores"])
+        else:
+            confidence = self._mean_fusion(
+                [results["audio_score"], results["video_score"]]
+            )
 
         results["confidence"] = confidence
 
@@ -151,6 +183,50 @@ class DeepfakeDetector:
             return None
 
         return sum(valid) / len(valid)
+
+    def _stacking_fusion(self, individual_scores):
+        """
+        Perform stacking using a trained meta-model.
+
+        Expected feature order:
+        [aasist_score, efficientnet_score, mesonet_score, xceptionnet_score]
+        """
+
+        if self.stacking_model is None:
+            logger.warning("Stacking model not loaded. Using mean fusion fallback.")
+            return self._mean_fusion(list(individual_scores.values()))
+
+        feature_order = [
+            "aasist_score",
+            "efficientnet_score",
+            "mesonet_score",
+            "xceptionnet_score",
+        ]
+
+        features = []
+        for key in feature_order:
+            score = individual_scores.get(key)
+            if score is None:
+                score = 0.5  # neutral fallback if one model failed
+            features.append(float(score))
+
+        X = pd.DataFrame([features], columns=feature_order)
+
+        try:
+            logger.info(f"Stacking features: {features}")
+
+            if hasattr(self.stacking_model, "predict_proba"):
+                prob_fake = self.stacking_model.predict_proba(X)[0][1]
+                logger.info(f"Stacking output (prob_fake): {prob_fake}")
+                return float(prob_fake)
+
+            pred = self.stacking_model.predict(X)[0]
+            logger.info(f"Stacking raw output: {pred}")
+            return float(pred)
+
+        except Exception as e:
+            logger.warning(f"Stacking inference failed: {e}. Using mean fusion fallback.")
+            return self._mean_fusion(list(individual_scores.values()))
 
 
 def print_output(result, video_idx):
@@ -325,30 +401,31 @@ def main():
 
     if efficientnet_total:
         logger.info(
-            f"Efficientnet accuracy: {efficientnet_correct/efficientnet_total:.4f}"
+            f"Efficientnet accuracy: {efficientnet_correct/efficientnet_total:.4f} ({efficientnet_correct}/{efficientnet_total})"
         )
 
     if mesonet_total:
         logger.info(
-            f"Mesonet accuracy: {mesonet_correct/mesonet_total:.4f}"
+            f"Mesonet accuracy: {mesonet_correct/mesonet_total:.4f}({mesonet_correct}/{mesonet_total})"
         )
 
     if xceptionnet_total:
         logger.info(
-            f"Xceptionnet accuracy: {xceptionnet_correct/xceptionnet_total:.4f}"
+            f"Xceptionnet accuracy: {xceptionnet_correct/xceptionnet_total:.4f}({xceptionnet_correct}/{xceptionnet_total})"
         )
 
     if aasist_total:
         logger.info(
-            f"Aasist accuracy: {aasist_correct/aasist_total:.4f}"
+            f"Aasist accuracy: {aasist_correct/aasist_total:.4f}({aasist_correct}/{aasist_total})"
         )
 
     if ensemble_total:
         logger.info(
-            f"Ensemble accuracy: {ensemble_correct/ensemble_total:.4f}"
+            f"Ensemble accuracy: {ensemble_correct/ensemble_total:.4f}({ensemble_correct}/{ensemble_total})"
         )
 
     logger.info("==================================")
+    detector.video_handler.cleanup()
 
 
 if __name__ == "__main__":

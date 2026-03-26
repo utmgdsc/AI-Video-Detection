@@ -1,7 +1,8 @@
 # Ensemble Configuration
 device: "cuda" # cuda or cpu
-ensemble_method: "weighted_voting" # Options: 'mean', 'weighted_average', 'weighted_voting' "majority_voting"
+ensemble_method: stacking # Options: 'mean', 'weighted_average', 'weighted_voting' "majority_voting"
 ensemble_threshold: 0.5
+stacking_model_path: ./backend/models/stacking/stacking_model.pkl
 output_dir: "./outputs/ensemble_results/"
 batch_size: 60
 frame_skip: 30
@@ -37,7 +38,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/val/small_test_set/"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/all_test_videos"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
@@ -78,15 +79,16 @@ models:
     weights_path: "./weights/meso4_weight_refit_val_acc.h5"
     env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
     image_size: 256
-    port: 8002
+    port: 8004
     # scoring_method: Options are
     #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
     #   "median score":   median of [face0_score, face1_score, ..., faceN_score]
     #   Any other string: mean of [face0_class, face1_class, ..., faceN_class], where faceI_class = (faceI_score > threshold)
-    scoring_method: "Default"
+    scoring_method: "mean score"
     threshold: 0.5
 
   aasist:
     active: true
     weights_path: "./backend/models/AASIST/aasist_detector/weights/AASIST.pth"
     threshold: 0.5
+
