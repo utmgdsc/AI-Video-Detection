@@ -52,7 +52,7 @@ class DeepfakeDetector:
         )
         self.video_handler = VideoHandler(device)
 
-    def analyze(self, video_path, mtcnn, batch_size, frame_skip):
+    def analyze(self, video_path, mtcnn, batch_size, frame_skip, decision_threshold):
         """
         Analyze video for deepfake detection.
 
@@ -86,7 +86,7 @@ class DeepfakeDetector:
             results["audio_score"] = audio_result["score"]
             results["individual_prediction"]["aasist_prediction"] = (
                 False
-                if audio_result["score"] > 0.5
+                if audio_result["score"] > decision_threshold
                 else True
             )
             os.unlink(audio_path)  # Clean up temp file
@@ -107,17 +107,17 @@ class DeepfakeDetector:
             if results["video_score"] is not None:
                 results["individual_prediction"]["efficientnet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["efficientnet_score"] > 0.5
+                    if video_result["individual_scores"]["efficientnet_score"] > decision_threshold
                     else True
                 )
                 results["individual_prediction"]["mesonet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["mesonet_score"] > 0.5
+                    if video_result["individual_scores"]["mesonet_score"] > decision_threshold
                     else True
                 )
                 results["individual_prediction"]["xceptionnet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["xceptionnet_score"] > 0.5
+                    if video_result["individual_scores"]["xceptionnet_score"] > decision_threshold
                     else True
                 )
         except Exception as e:
@@ -129,12 +129,12 @@ class DeepfakeDetector:
             results["audio_score"], results["video_score"]
         )
         if results["audio_score"] is not None and results["video_score"] is not None: 
-            results["audio_is_real"] = results["audio_score"] < 0.5
-            results["video_is_real"] = results["video_score"] < 0.5
+            results["audio_is_real"] = results["audio_score"] < decision_threshold
+            results["video_is_real"] = results["video_score"] < decision_threshold
             results["is_real"] = results["audio_is_real"] and results["video_is_real"]
         elif results["audio_score"] is None and results["video_score"] is not None:
             results["audio_is_real"] = None;
-            results["video_is_real"] = results["video_score"] < 0.5
+            results["video_is_real"] = results["video_score"] < decision_threshold
             results["is_real"] = results["video_is_real"]
         else: 
             results["audio_is_real"] = None
@@ -278,7 +278,7 @@ def main():
         for idx, video_path in enumerate(os.listdir(input_path)):
             full_path = os.path.join(input_path, video_path)
             result = detector.analyze(
-                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
             )
             # print result for one video
             print_output(result, idx)
