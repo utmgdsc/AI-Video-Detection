@@ -148,6 +148,10 @@ class DeepfakeDetector:
 
         TODO: Define combination strategy based on experiments.
         """
+        if audio_score is None and video_score is None:
+            return 0.5
+        if video_score is None:
+            return audio_score
         if audio_score is None:
             return video_score
 
@@ -249,7 +253,7 @@ def main():
     if args.input_dir:
         input_path = args.input_dir
     else:
-        input_path = cfg["datasets"]["faceforensic"]["example_video_set_path"]
+        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
     if os.path.isfile(input_path):
