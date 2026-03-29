@@ -205,6 +205,39 @@ def print_accuracy(models_correct_prediction, total_videos):
     logger.info(f"AAsist accuracy: {models_correct_prediction['aasist_correct_prediction']/total_videos}")
     logger.info(f"Ensemble accuracy: {models_correct_prediction['ensemble_correct_prediction']/total_videos}")
     logger.info(f"==================================")
+
+def update_prediction(model_predictions, prediction, ground_truth):
+    fake_pred = not prediction
+    fake_gt = not ground_truth
+
+    if fake_pred and fake_gt: 
+        model_predictions["tp"] += 1
+    elif fake_pred and not fake_gt: 
+        model_predictions["fp"] += 1
+    elif not fake_pred and fake_gt: 
+        model_predictions["fn"] += 1
+    else: 
+        model_predictions["tn"] += 1
+
+def print_metrics(model_predictions, model_name):
+    tp = model_predictions["tp"]
+    tn = model_predictions["tn"]
+    fp = model_predictions["fp"]
+    fn = model_predictions["fn"]
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+    logger.info(f"==================================")
+    logger.info(f"{model_name} metrics: ")
+    logger.info(f"Precision: {precision:.4f}")
+    logger.info(f"Recall: {recall:.4f}")
+    logger.info(f"Confusion Matrix:")
+    logger.info(f"                  Predicted")
+    logger.info(f"              True        Fake")
+    logger.info(f"Actual Real   {tn:6d}     {fp:6d}")
+    logger.info(f"Actual Fake   {fn:6d}     {tp:6d}")
+    logger.info(f"==================================")
     
 def main():
     parser = argparse.ArgumentParser(
@@ -275,6 +308,15 @@ def main():
             "aasist_correct_prediction": 0,
             "ensemble_correct_prediction": 0,
         }
+        
+        models_predictions = {
+            "efficientnet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
+            "mesonet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
+            "xceptionnet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
+            "aasist": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
+            "ensemble": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
+        }
+
         for idx, video_path in enumerate(os.listdir(input_path)):
             full_path = os.path.join(input_path, video_path)
             result = detector.analyze(
@@ -298,6 +340,25 @@ def main():
                     models_correct_prediction["xeceptionnet_correct_prediction"] += 1
                 if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
                     models_correct_prediction["aasist_correct_prediction"] += 1
+                
+                # update predictions
+                update_prediction(
+                    models_predictions["efficientnet"], 
+                    result["individual_prediction"]["efficientnet_prediction"], 
+                    ground_truth_video)
+                update_prediction(
+                    models_predictions["mesonet"], 
+                    result["individual_prediction"]["mesonet_prediction"], 
+                    ground_truth_video)
+                update_prediction(
+                    models_predictions["xceptionnet"], 
+                    result["individual_prediction"]["xceptionnet_prediction"], 
+                    ground_truth_video)
+                update_prediction(
+                    models_predictions["aasist"], 
+                    result["individual_prediction"]["aasist_prediction"], 
+                    ground_truth_audio)
+                
                 overall_truth = ground_truth_audio and ground_truth_video
                 # If the model's prediction matches the overall truth, it is correct
                 # Print the ground truths
@@ -308,8 +369,17 @@ def main():
                 if result["is_real"] == overall_truth:
                     logger.info("Model has made a correct predicition")
                     models_correct_prediction["ensemble_correct_prediction"] += 1
+                update_prediction(
+                    models_predictions["ensemble"], 
+                    result["is_real"], 
+                    overall_truth)
         
         detector.video_handler.cleanup()
         print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
+        print_metrics(models_predictions["efficientnet"], "EfficientNet")
+        print_metrics(models_predictions["mesonet"], "MesoNet")
+        print_metrics(models_predictions["xceptionnet"], "XceptionNet")
+        print_metrics(models_predictions["aasist"], "AASIST")
+        print_metrics(models_predictions["ensemble"], "Ensemble")
 if __name__ == "__main__":
     main()
