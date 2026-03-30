@@ -234,11 +234,11 @@ def print_metrics(model_predictions, model_name):
     logger.info(f"Recall: {recall:.4f}")
     logger.info(f"Confusion Matrix:")
     logger.info(f"                  Predicted")
-    logger.info(f"              True        Fake")
-    logger.info(f"Actual Real   {tn:6d}     {fp:6d}")
-    logger.info(f"Actual Fake   {fn:6d}     {tp:6d}")
+    logger.info(f"               Real      Fake")
+    logger.info(f"Actual Real   {tn:6d}    {fp:6d}")
+    logger.info(f"Actual Fake   {fn:6d}    {tp:6d}")
     logger.info(f"==================================")
-    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Extract faces from videos and images using MTCNN",
