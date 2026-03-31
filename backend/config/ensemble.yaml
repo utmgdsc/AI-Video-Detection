@@ -38,7 +38,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/all_test_videos"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/all_videos"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
@@ -77,7 +77,7 @@ models:
     active: true
     architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
     weights_path: "./weights/meso4_weight_refit_val_acc.h5"
-    env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3"
+    env_path: "python3"
     image_size: 256
     port: 8004
     # scoring_method: Options are

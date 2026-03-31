@@ -59,7 +59,6 @@ class DeepfakeDetector:
         # LOAD STACKING MODEL
         # -------------------------
         self.stacking_model = None
-
         fusion_method = self.config.get("ensemble_method", "mean")
         stacking_model_path = self.config.get("stacking_model_path")
 
@@ -78,6 +77,7 @@ class DeepfakeDetector:
                     "Stacking selected but stacking model path is missing or invalid. "
                     "Falling back to mean fusion."
                 )
+
 
     def analyze(
         self,
@@ -159,14 +159,23 @@ class DeepfakeDetector:
         # ENSEMBLE
         # -------------------------
 
+
         fusion_method = self.config.get("ensemble_method", "mean")
 
         if fusion_method == "stacking":
             confidence = self._stacking_fusion(results["individual_scores"])
+
+        elif fusion_method == "weighted_average":
+            confidence = self._weighted_average_fusion(results["individual_scores"])
+
+        elif fusion_method == "majority_voting":
+            confidence = self._majority_voting_fusion(results["individual_scores"])
+
+        elif fusion_method == "weighted_voting":
+            confidence = self._weighted_voting_fusion(results["individual_scores"])
+
         else:
-            confidence = self._mean_fusion(
-                [results["audio_score"], results["video_score"]]
-            )
+            confidence = self._mean_fusion(results["individual_scores"].values())
 
         results["confidence"] = confidence
 
@@ -183,6 +192,102 @@ class DeepfakeDetector:
             return None
 
         return sum(valid) / len(valid)
+    
+    def _weighted_average_fusion(self, individual_scores):
+        """
+        Weighted average of per-model fake probabilities.
+        Higher score = more likely fake.
+        """
+        weights = self.config.get("ensemble_weights", {})
+        
+
+        valid_scores = []
+        valid_weights = []
+
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            base_name = model_name.replace("_score", "")
+            weight = float(weights.get(model_name, weights.get(base_name, 1.0)))
+            valid_scores.append(float(score))
+            valid_weights.append(weight)
+
+        if not valid_scores:
+            return None
+
+        total_weight = sum(valid_weights)
+        if total_weight == 0:
+            return None
+
+        return sum(s * w for s, w in zip(valid_scores, valid_weights)) / total_weight
+
+
+    def _majority_voting_fusion(self, individual_scores):
+        """
+        Unweighted majority vote across per-model predictions.
+        Returns a pseudo-probability in [0,1]:
+        fraction of models voting fake.
+        """
+
+        if not individual_scores:
+            return None
+
+        votes = []
+
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            threshold = self._get_model_threshold(model_name)
+            vote_fake = 1 if float(score) >= threshold else 0
+            votes.append(vote_fake)
+
+        if not votes:
+            return None
+
+        return sum(votes) / len(votes)
+
+
+    def _weighted_voting_fusion(self, individual_scores):
+        """
+        Weighted majority vote across per-model predictions.
+        Returns weighted fraction voting fake in [0,1].
+        """
+
+        weights = self.config.get("ensemble_weights", {})
+
+        weighted_fake_votes = 0.0
+        total_weight = 0.0
+
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            threshold = self._get_model_threshold(model_name)
+            vote_fake = 1 if float(score) >= threshold else 0
+            base_name = model_name.replace("_score", "")
+            weight = float(weights.get(model_name, weights.get(base_name, 1.0)))
+
+            weighted_fake_votes += vote_fake * weight
+            total_weight += weight
+
+        if total_weight == 0:
+            return None
+
+        return weighted_fake_votes / total_weight
+
+
+    def _get_model_threshold(self, model_name):
+        """
+        AASIST uses audio threshold.
+        All video models use video threshold.
+        """
+
+        if model_name == "aasist_score":
+            return float(self.config.get("audio_decision_threshold", 0.5))
+
+        return float(self.config.get("video_decision_threshold", 0.5))
 
     def _stacking_fusion(self, individual_scores):
         """
@@ -244,6 +349,21 @@ def print_output(result, video_idx):
     logger.info(f"Details: {result['details']}")
     logger.info("==================================")
 
+def get_ground_truth_label(video_name):
+    """
+    FakeAVCeleb flattened filename prefixes:
+    RvRa = RealVideo-RealAudio  -> real
+    RvFa = RealVideo-FakeAudio  -> fake
+    FvRa = FakeVideo-RealAudio  -> fake
+    FvFa = FakeVideo-FakeAudio  -> fake
+    """
+    if video_name.startswith("RvRa_"):
+        return True
+
+    if video_name.startswith(("RvFa_", "FvRa_", "FvFa_")):
+        return False
+
+    return None
 
 def main():
 
@@ -295,7 +415,7 @@ def main():
     )
 
     # -------------------------
-    # INPUT PATH
+    # INPUT PATH (Both file and Directory)
     # -------------------------
 
     if args.input_dir:
@@ -303,9 +423,20 @@ def main():
     else:
         input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
 
-    if not os.path.isdir(input_path):
-
+    if not os.path.exists(input_path):
         logger.error(f"Invalid input path: {input_path}")
+        return
+
+    if os.path.isfile(input_path):
+        videos = [input_path]
+    elif os.path.isdir(input_path):
+        videos = [
+            os.path.join(input_path, video)
+            for video in sorted(os.listdir(input_path))
+            if os.path.isfile(os.path.join(input_path, video))
+        ]
+    else:
+        logger.error(f"Input path is neither a file nor a directory: {input_path}")
         return
 
     detector = DeepfakeDetector(config=cfg, device=device)
@@ -333,16 +464,17 @@ def main():
     # PROCESS DATASET
     # -------------------------
 
-    videos = sorted(os.listdir(input_path))
+    for idx, full_path in enumerate(videos):
 
-    for idx, video in enumerate(videos):
+        video = os.path.basename(full_path)
 
-        full_path = os.path.join(input_path, video)
+        ground_truth = get_ground_truth_label(video)
 
-        if not os.path.isfile(full_path):
+        if ground_truth is None:
+            logger.warning(
+                f"Skipping {video}: could not determine ground truth from filename prefix."
+            )
             continue
-
-        ground_truth = "real" in video.lower()
 
         try:
 

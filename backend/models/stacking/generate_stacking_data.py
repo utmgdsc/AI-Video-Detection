@@ -7,17 +7,25 @@ from facenet_pytorch import MTCNN
 from backend.main import DeepfakeDetector
 
 
+import os
+
+
 def get_label_from_path(video_path: str) -> int:
     """
     Binary label:
-    0 = real  -> RealVideo-RealAudio
+    0 = real  -> RvRa
     1 = fake  -> everything else
     """
-    normalized = video_path.replace("\\", "/")
 
-    if "RealVideo-RealAudio" in normalized:
+    filename = os.path.basename(video_path)
+
+    if filename.startswith("RvRa_"):
         return 0
-    return 1
+
+    if filename.startswith(("RvFa_", "FvRa_", "FvFa_")):
+        return 1
+
+    raise ValueError(f"Could not determine label from filename: {video_path}")
 
 
 def collect_video_files(root_dir: str):
