@@ -291,7 +291,7 @@ def main():
     detector = DeepfakeDetector(config=cfg, device=device)
     if os.path.isfile(input_path):
         result = detector.analyze(
-            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
         )
         print_output(result, 0)
     elif os.path.isdir(input_path):
