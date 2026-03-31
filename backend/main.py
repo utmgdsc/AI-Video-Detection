@@ -330,6 +330,24 @@ def main():
                 )
                 if ground_truth_audio == None or ground_truth_video == None:
                     continue
+                if result["video_score"] is not None:
+                    update_prediction(
+                        models_predictions["efficientnet"], 
+                        result["individual_prediction"]["efficientnet_prediction"], 
+                        ground_truth_video)
+                    update_prediction(
+                        models_predictions["mesonet"], 
+                        result["individual_prediction"]["mesonet_prediction"], 
+                        ground_truth_video)
+                    update_prediction(
+                        models_predictions["xceptionnet"], 
+                        result["individual_prediction"]["xceptionnet_prediction"], 
+                        ground_truth_video)
+                if result["audio_score"] is not None:
+                    update_prediction(
+                        models_predictions["aasist"], 
+                        result["individual_prediction"]["aasist_prediction"], 
+                        ground_truth_audio)
                 if result["audio_score"] is None or result["video_score"] is None: 
                     continue
                 if result["individual_prediction"]["efficientnet_prediction"] == ground_truth_video:
@@ -342,23 +360,6 @@ def main():
                     models_correct_prediction["aasist_correct_prediction"] += 1
                 
                 # update predictions
-                update_prediction(
-                    models_predictions["efficientnet"], 
-                    result["individual_prediction"]["efficientnet_prediction"], 
-                    ground_truth_video)
-                update_prediction(
-                    models_predictions["mesonet"], 
-                    result["individual_prediction"]["mesonet_prediction"], 
-                    ground_truth_video)
-                update_prediction(
-                    models_predictions["xceptionnet"], 
-                    result["individual_prediction"]["xceptionnet_prediction"], 
-                    ground_truth_video)
-                update_prediction(
-                    models_predictions["aasist"], 
-                    result["individual_prediction"]["aasist_prediction"], 
-                    ground_truth_audio)
-                
                 overall_truth = ground_truth_audio and ground_truth_video
                 # If the model's prediction matches the overall truth, it is correct
                 # Print the ground truths
@@ -375,11 +376,12 @@ def main():
                     overall_truth)
         
         detector.video_handler.cleanup()
-        print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
-        print_metrics(models_predictions["efficientnet"], "EfficientNet")
-        print_metrics(models_predictions["mesonet"], "MesoNet")
-        print_metrics(models_predictions["xceptionnet"], "XceptionNet")
-        print_metrics(models_predictions["aasist"], "AASIST")
-        print_metrics(models_predictions["ensemble"], "Ensemble")
+        if cfg["compare_baseline_accuracy"]:
+            print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
+            print_metrics(models_predictions["efficientnet"], "EfficientNet")
+            print_metrics(models_predictions["mesonet"], "MesoNet")
+            print_metrics(models_predictions["xceptionnet"], "XceptionNet")
+            print_metrics(models_predictions["aasist"], "AASIST")
+            print_metrics(models_predictions["ensemble"], "Ensemble")
 if __name__ == "__main__":
     main()
