@@ -52,7 +52,7 @@ class DeepfakeDetector:
         )
         self.video_handler = VideoHandler(device)
 
-    def analyze(self, video_path, mtcnn, batch_size, frame_skip):
+    def analyze(self, video_path, mtcnn, batch_size, frame_skip, decision_threshold):
         """
         Analyze video for deepfake detection.
 
@@ -86,7 +86,7 @@ class DeepfakeDetector:
             results["audio_score"] = audio_result["score"]
             results["individual_prediction"]["aasist_prediction"] = (
                 False
-                if audio_result["score"] > 0.5
+                if audio_result["score"] > decision_threshold
                 else True
             )
             os.unlink(audio_path)  # Clean up temp file
@@ -107,17 +107,17 @@ class DeepfakeDetector:
             if results["video_score"] is not None:
                 results["individual_prediction"]["efficientnet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["efficientnet_score"] > 0.5
+                    if video_result["individual_scores"]["efficientnet_score"] > decision_threshold
                     else True
                 )
                 results["individual_prediction"]["mesonet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["mesonet_score"] > 0.5
+                    if video_result["individual_scores"]["mesonet_score"] > decision_threshold
                     else True
                 )
                 results["individual_prediction"]["xceptionnet_prediction"] = (
                     False
-                    if video_result["individual_scores"]["xceptionnet_score"] > 0.5
+                    if video_result["individual_scores"]["xceptionnet_score"] > decision_threshold
                     else True
                 )
         except Exception as e:
@@ -129,12 +129,12 @@ class DeepfakeDetector:
             results["audio_score"], results["video_score"]
         )
         if results["audio_score"] is not None and results["video_score"] is not None: 
-            results["audio_is_real"] = results["audio_score"] < 0.5
-            results["video_is_real"] = results["video_score"] < 0.5
+            results["audio_is_real"] = results["audio_score"] < decision_threshold
+            results["video_is_real"] = results["video_score"] < decision_threshold
             results["is_real"] = results["audio_is_real"] and results["video_is_real"]
         elif results["audio_score"] is None and results["video_score"] is not None:
             results["audio_is_real"] = None;
-            results["video_is_real"] = results["video_score"] < 0.5
+            results["video_is_real"] = results["video_score"] < decision_threshold
             results["is_real"] = results["video_is_real"]
         else: 
             results["audio_is_real"] = None
@@ -148,6 +148,10 @@ class DeepfakeDetector:
 
         TODO: Define combination strategy based on experiments.
         """
+        if audio_score is None and video_score is None:
+            return 0.5
+        if video_score is None:
+            return audio_score
         if audio_score is None:
             return video_score
 
@@ -156,30 +160,30 @@ class DeepfakeDetector:
         # will do this once Mesonet + Xception are integrated
         return (audio_score + video_score) / 2
 
-
-def get_video_ground_truth(df, full_video_path):
+def get_video_ground_truth(full_video_path):
+    """
+    Determines ground truth directly from the file prefix.
+    Expected prefixes: 'FvFa_', 'FvRa_', 'RvFa_', 'RvRa_'
+    """
     try:
-        # 1. Extract ONLY the filename (e.g., 'FvFa_00001_0_id06269_wavtolip.mp4')
         filename = os.path.basename(full_video_path)
+        
+        # Grab the first 4 characters and convert to lowercase (e.g., 'fvfa')
+        prefix = filename[:4].lower()
 
-        # 2. Strip custom prefixes like 'FvFa_', 'RvFa_', etc., if they exist
-        clean_filename = re.sub(r"^(FvFa|FvRa|RvFa|RvRa)_", "", filename)
-
-        # 3. Search for this clean filename in the CSV's 'path' column
-        matches = df[df["path"] == clean_filename]
-
-        # Return (None, None) immediately if no match is found
-        if matches.empty:
-            logger.warning(f"Video {clean_filename} not found in metadata. Skipping.")
+        if prefix == "fvfa":
+            return (False, False)  # Video Fake, Audio Fake
+        elif prefix == "fvra":
+            return (False, True)   # Video Fake, Audio Real
+        elif prefix == "rvfa":
+            return (True, False)   # Video Real, Audio Fake
+        elif prefix == "rvra":
+            return (True, True)    # Video Real, Audio Real
+        else:
+            logger.warning(f"Video {filename} does not have a valid prefix. Skipping.")
             return (None, None)
 
-        # 4. Grab the first one
-        video_type = matches.iloc[0]["type"]
-
-        return ("FakeVideo" not in video_type, "FakeAudio" not in video_type)
-
     except Exception as e:
-        # Catch any unexpected errors (like missing columns or pandas issues)
         logger.error(f"Error processing ground truth for {full_video_path}: {e}")
         return (None, None)
 
@@ -230,11 +234,11 @@ def print_metrics(model_predictions, model_name):
     logger.info(f"Recall: {recall:.4f}")
     logger.info(f"Confusion Matrix:")
     logger.info(f"                  Predicted")
-    logger.info(f"              True        Fake")
-    logger.info(f"Actual Real   {tn:6d}     {fp:6d}")
-    logger.info(f"Actual Fake   {fn:6d}     {tp:6d}")
+    logger.info(f"               Real      Fake")
+    logger.info(f"Actual Real   {tn:6d}    {fp:6d}")
+    logger.info(f"Actual Fake   {fn:6d}    {tp:6d}")
     logger.info(f"==================================")
-    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Extract faces from videos and images using MTCNN",
@@ -282,12 +286,12 @@ def main():
     if args.input_dir:
         input_path = args.input_dir
     else:
-        input_path = cfg["datasets"]["faceforensic"]["example_video_set_path"]
+        input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
 
     detector = DeepfakeDetector(config=cfg, device=device)
     if os.path.isfile(input_path):
         result = detector.analyze(
-            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
         )
         print_output(result, 0)
     elif os.path.isdir(input_path):
@@ -316,13 +320,13 @@ def main():
         for idx, video_path in enumerate(os.listdir(input_path)):
             full_path = os.path.join(input_path, video_path)
             result = detector.analyze(
-                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"]
+                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
             )
             # print result for one video
             print_output(result, idx)
             if cfg["compare_baseline_accuracy"]:
                 ground_truth_video, ground_truth_audio = get_video_ground_truth(
-                    df, full_path
+                    full_path
                 )
                 if ground_truth_audio == None or ground_truth_video == None:
                     continue
@@ -364,6 +368,7 @@ def main():
                 logger.info(f"File: {video_path} | GT Video: {ground_truth_video} | GT Audio: {ground_truth_audio} | Overall Truth: {overall_truth}")
                 
                 if result["is_real"] == overall_truth:
+                    logger.info("Model has made a correct predicition")
                     models_correct_prediction["ensemble_correct_prediction"] += 1
                 update_prediction(
                     models_predictions["ensemble"], 
