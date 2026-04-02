@@ -349,21 +349,21 @@ def print_output(result, video_idx):
     logger.info(f"Details: {result['details']}")
     logger.info("==================================")
 
-def get_ground_truth_labels(video_name):
-
+def get_ground_truth_label(video_name):
+    """
+    Global label for all models:
+    RvRa  -> real
+    RvFa  -> fake
+    FvRa  -> fake
+    FvFa  -> fake
+    """
     if video_name.startswith("RvRa_"):
-        return True, True, True
+        return True
 
-    if video_name.startswith("RvFa_"):
-        return True, False, False
+    if video_name.startswith(("RvFa_", "FvRa_", "FvFa_")):
+        return False
 
-    if video_name.startswith("FvRa_"):
-        return False, True, False
-
-    if video_name.startswith("FvFa_"):
-        return False, False, False
-
-    return None, None, None
+    return None
 
 def main():
 
@@ -468,13 +468,9 @@ def main():
 
         video = os.path.basename(full_path)
 
-        ground_truth_video, ground_truth_audio, ground_truth_ensemble = get_ground_truth_labels(video)
+        ground_truth = get_ground_truth_label(video)
 
-        if (
-            ground_truth_video is None
-            or ground_truth_audio is None
-            or ground_truth_ensemble is None
-        ):
+        if ground_truth is None:
             logger.warning(
                 f"Skipping {video}: could not determine ground truth from filename prefix."
             )
@@ -503,30 +499,30 @@ def main():
         if "efficientnet_score" in scores:
             efficientnet_total += 1
             pred = scores["efficientnet_score"] < 0.5
-            if pred == ground_truth_video:
+            if pred == ground_truth:
                 efficientnet_correct += 1
 
         if "mesonet_score" in scores:
             mesonet_total += 1
             pred = scores["mesonet_score"] < 0.5
-            if pred == ground_truth_video:
+            if pred == ground_truth:
                 mesonet_correct += 1
 
         if "xceptionnet_score" in scores:
             xceptionnet_total += 1
             pred = scores["xceptionnet_score"] < 0.5
-            if pred == ground_truth_video:
+            if pred == ground_truth:
                 xceptionnet_correct += 1
 
         if "aasist_score" in scores:
             aasist_total += 1
             pred = scores["aasist_score"] < 0.5
-            if pred == ground_truth_audio:
+            if pred == ground_truth:
                 aasist_correct += 1
 
         if result["is_real"] is not None:
             ensemble_total += 1
-            if result["is_real"] == ground_truth_ensemble:
+            if result["is_real"] == ground_truth:
                 ensemble_correct += 1
 
     # -------------------------
