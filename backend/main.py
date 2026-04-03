@@ -85,8 +85,6 @@ class DeepfakeDetector:
         mtcnn,
         batch_size,
         frame_skip,
-        audio_decision_threshold,
-        video_decision_threshold,
     ):
 
         results = {
@@ -159,7 +157,6 @@ class DeepfakeDetector:
         # ENSEMBLE
         # -------------------------
 
-
         fusion_method = self.config.get("ensemble_method", "mean")
 
         if fusion_method == "stacking":
@@ -180,7 +177,7 @@ class DeepfakeDetector:
         results["confidence"] = confidence
 
         if confidence is not None:
-            results["is_real"] = confidence < 0.5
+            results["is_real"] = confidence < self.config.get("ensemble_confidence_decision_threshold", 0.5)
 
         return results
 
@@ -525,8 +522,6 @@ def main():
                 mtcnn,
                 cfg["batch_size"],
                 cfg["frame_skip"],
-                cfg.get("audio_decision_threshold", 0.5),
-                cfg.get("video_decision_threshold", 0.5),
             )
 
         except Exception as e:
@@ -540,25 +535,25 @@ def main():
 
         if "efficientnet_score" in scores:
             efficientnet_total += 1
-            pred = scores["efficientnet_score"] < 0.5
+            pred = scores["efficientnet_score"] < cfg["video_decision_threshold"]
             if pred == ground_truth:
                 efficientnet_correct += 1
 
         if "mesonet_score" in scores:
             mesonet_total += 1
-            pred = scores["mesonet_score"] < 0.5
+            pred = scores["mesonet_score"] < cfg["video_decision_threshold"]
             if pred == ground_truth:
                 mesonet_correct += 1
 
         if "xceptionnet_score" in scores:
             xceptionnet_total += 1
-            pred = scores["xceptionnet_score"] < 0.5
+            pred = scores["xceptionnet_score"] < cfg["video_decision_threshold"]
             if pred == ground_truth:
                 xceptionnet_correct += 1
 
         if "aasist_score" in scores:
             aasist_total += 1
-            pred = scores["aasist_score"] < 0.5
+            pred = scores["aasist_score"] < cfg["audio_decision_threshold"]
             if pred == ground_truth:
                 aasist_correct += 1
 

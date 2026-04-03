@@ -13,6 +13,7 @@ decision_threshold: 0.5
 
 audio_decision_threshold: 0.5
 video_decision_threshold: 0.5
+ensemble_confidence_decision_threshold: 0.5
 
 ensemble_weights:
   efficientnet: 1.0
@@ -38,7 +39,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/balanced_FvFa_RvRa"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
