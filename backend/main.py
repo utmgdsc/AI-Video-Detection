@@ -11,19 +11,20 @@ Flow:
 
 import os
 import tempfile
-import sys
-from facenet_pytorch import MTCNN
-import torch
 import argparse
 import yaml
+import torch
+from facenet_pytorch import MTCNN
+import pickle
+import numpy as np
 import pandas as pd
-import re
 
 from backend.handlers.audio_handler import AudioHandler
 from backend.handlers.video_handler import VideoHandler
 from backend.preprocessing.video_processor import separate_audio
 
 import logging
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,65 +37,98 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 class DeepfakeDetector:
     """Main orchestrator for deepfake detection pipeline."""
 
     def __init__(self, config=None, device="cuda"):
-        """
-        Initialize detector with handlers.
 
-        Args:
-            config: Optional configuration dict with paths to weights
-        """
         self.config = config or {}
+
+        aasist_cfg = self.config.get("models", {}).get("aasist", {})
+
         self.audio_handler = AudioHandler(
-            weights_path=self.config.get("aasist_weights")
+            weights_path=aasist_cfg.get(
+                "weights_path", self.config.get("aasist_weights")
+            )
         )
+
         self.video_handler = VideoHandler(device)
 
-    def analyze(self, video_path, mtcnn, batch_size, frame_skip, decision_threshold):
-        """
-        Analyze video for deepfake detection.
+        # -------------------------
+        # LOAD STACKING MODEL
+        # -------------------------
+        self.stacking_model = None
+        fusion_method = self.config.get("ensemble_method", "mean")
+        stacking_model_path = self.config.get("stacking_model_path")
 
-        Args:
-            video_path: Path to video file
+        if fusion_method == "stacking":
+            if stacking_model_path and os.path.exists(stacking_model_path):
+                try:
+                    with open(stacking_model_path, "rb") as f:
+                        self.stacking_model = pickle.load(f)
+                    logger.info(f"Loaded stacking model from {stacking_model_path}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load stacking model: {e}. Falling back to mean fusion."
+                    )
+            else:
+                logger.warning(
+                    "Stacking selected but stacking model path is missing or invalid. "
+                    "Falling back to mean fusion."
+                )
 
-        Returns:
-            dict: {
-                'is_real': bool,
-                'confidence': float,
-                'audio_score': float or None,
-                'video_score': float,
-                'details': str
-            }
-        """
+
+    def analyze(
+        self,
+        video_path,
+        mtcnn,
+        batch_size,
+        frame_skip,
+    ):
+
         results = {
             "audio_score": None,
             "video_score": None,
-            "is_real": False,
-            "confidence": 0.0,
-            "individual_prediction": {},
+            "confidence": None,
+            "is_real": None,
+            "individual_scores": {},
             "details": "",
         }
 
-        # 1. Extract audio (if present)
+        # -------------------------
+        # AUDIO ANALYSIS
+        # -------------------------
+
+        audio_path = None
+
         try:
+
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 audio_path = f.name
+
             separate_audio(video_path, audio_path)
+
             audio_result = self.audio_handler.process(audio_path)
-            results["audio_score"] = audio_result["score"]
-            results["individual_prediction"]["aasist_prediction"] = (
-                False
-                if audio_result["score"] > decision_threshold
-                else True
-            )
-            os.unlink(audio_path)  # Clean up temp file
+
+            results["audio_score"] = float(audio_result["score"])
+            results["individual_scores"]["aasist_score"] = results["audio_score"]
+
         except Exception as e:
+
             results["details"] += f"Audio analysis skipped: {e}\n"
 
-        # 2. Analyze video
+        finally:
+
+            if audio_path and os.path.exists(audio_path):
+                os.unlink(audio_path)
+
+        # -------------------------
+        # VIDEO ANALYSIS
+        # -------------------------
+
         try:
+
             video_result = self.video_handler.process(
                 self.config["models"],
                 self.config["device"],
@@ -103,99 +137,230 @@ class DeepfakeDetector:
                 batch_size,
                 sample_rate=frame_skip,
             )
-            results["video_score"] = video_result["combined_score"]
-            if results["video_score"] is not None:
-                results["individual_prediction"]["efficientnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["efficientnet_score"] > decision_threshold
-                    else True
-                )
-                results["individual_prediction"]["mesonet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["mesonet_score"] > decision_threshold
-                    else True
-                )
-                results["individual_prediction"]["xceptionnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["xceptionnet_score"] > decision_threshold
-                    else True
-                )
-        except Exception as e:
-            results["details"] += f"Video analysis failed: {e}\n"
-            raise
 
-        # 3. Combine scores
-        results["confidence"] = self._combine_scores(
-            results["audio_score"], results["video_score"]
-        )
-        if results["audio_score"] is not None and results["video_score"] is not None: 
-            results["audio_is_real"] = results["audio_score"] < decision_threshold
-            results["video_is_real"] = results["video_score"] < decision_threshold
-            results["is_real"] = results["audio_is_real"] and results["video_is_real"]
-        elif results["audio_score"] is None and results["video_score"] is not None:
-            results["audio_is_real"] = None;
-            results["video_is_real"] = results["video_score"] < decision_threshold
-            results["is_real"] = results["video_is_real"]
-        else: 
-            results["audio_is_real"] = None
-            results["video_is_real"] = None
-            results["is_real"] = None
+            results["video_score"] = video_result.get("combined_score")
+
+            individual_scores = video_result.get("individual_scores", {})
+
+            for key in ["efficientnet_score", "mesonet_score", "xceptionnet_score"]:
+
+                score = individual_scores.get(key)
+
+                if score is not None:
+                    results["individual_scores"][key] = float(score)
+
+        except Exception as e:
+
+            results["details"] += f"Video analysis failed: {e}\n"
+
+        # -------------------------
+        # ENSEMBLE
+        # -------------------------
+
+        fusion_method = self.config.get("ensemble_method", "mean")
+
+        if fusion_method == "stacking":
+            confidence = self._stacking_fusion(results["individual_scores"])
+
+        elif fusion_method == "weighted_average":
+            confidence = self._weighted_average_fusion(results["individual_scores"])
+
+        elif fusion_method == "majority_voting":
+            confidence = self._majority_voting_fusion(results["individual_scores"])
+
+        elif fusion_method == "weighted_voting":
+            confidence = self._weighted_voting_fusion(results["individual_scores"])
+
+        else:
+            confidence = self._mean_fusion(results["individual_scores"].values())
+
+        results["confidence"] = confidence
+
+        if confidence is not None:
+            results["is_real"] = confidence < self.config.get("ensemble_confidence_decision_threshold", 0.5)
+
         return results
 
-    def _combine_scores(self, audio_score, video_score):
+    def _mean_fusion(self, scores):
+
+        valid = [s for s in scores if s is not None]
+
+        if not valid:
+            return None
+
+        return sum(valid) / len(valid)
+    
+    def _weighted_average_fusion(self, individual_scores):
         """
-        Combine audio and video scores into final confidence.
-
-        TODO: Define combination strategy based on experiments.
+        Weighted average of per-model fake probabilities.
+        Higher score = more likely fake.
         """
-        if audio_score is None and video_score is None:
-            return 0.5
-        if video_score is None:
-            return audio_score
-        if audio_score is None:
-            return video_score
-
-        # Simple average for now
-        # TODO: Experiment with weighted combinations
-        # will do this once Mesonet + Xception are integrated
-        return (audio_score + video_score) / 2
-
-def get_video_ground_truth(full_video_path):
-    """
-    Determines ground truth directly from the file prefix.
-    Expected prefixes: 'FvFa_', 'FvRa_', 'RvFa_', 'RvRa_'
-    """
-    try:
-        filename = os.path.basename(full_video_path)
+        weights = self.config.get("ensemble_weights", {})
         
-        # Grab the first 4 characters and convert to lowercase (e.g., 'fvfa')
-        prefix = filename[:4].lower()
 
-        if prefix == "fvfa":
-            return (False, False)  # Video Fake, Audio Fake
-        elif prefix == "fvra":
-            return (False, True)   # Video Fake, Audio Real
-        elif prefix == "rvfa":
-            return (True, False)   # Video Real, Audio Fake
-        elif prefix == "rvra":
-            return (True, True)    # Video Real, Audio Real
-        else:
-            logger.warning(f"Video {filename} does not have a valid prefix. Skipping.")
-            return (None, None)
+        valid_scores = []
+        valid_weights = []
 
-    except Exception as e:
-        logger.error(f"Error processing ground truth for {full_video_path}: {e}")
-        return (None, None)
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            base_name = model_name.replace("_score", "")
+            weight = float(weights.get(model_name, weights.get(base_name, 1.0)))
+            valid_scores.append(float(score))
+            valid_weights.append(weight)
+
+        if not valid_scores:
+            return None
+
+        total_weight = sum(valid_weights)
+        if total_weight == 0:
+            return None
+
+        return sum(s * w for s, w in zip(valid_scores, valid_weights)) / total_weight
+
+
+    def _majority_voting_fusion(self, individual_scores):
+        """
+        Unweighted majority vote across per-model predictions.
+        Returns a pseudo-probability in [0,1]:
+        fraction of models voting fake.
+        """
+
+        if not individual_scores:
+            return None
+
+        votes = []
+
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            threshold = self._get_model_threshold(model_name)
+            vote_fake = 1 if float(score) >= threshold else 0
+            votes.append(vote_fake)
+
+        if not votes:
+            return None
+
+        return sum(votes) / len(votes)
+
+
+    def _weighted_voting_fusion(self, individual_scores):
+        """
+        Weighted majority vote across per-model predictions.
+        Returns weighted fraction voting fake in [0,1].
+        """
+
+        weights = self.config.get("ensemble_weights", {})
+
+        weighted_fake_votes = 0.0
+        total_weight = 0.0
+
+        for model_name, score in individual_scores.items():
+            if score is None:
+                continue
+
+            threshold = self._get_model_threshold(model_name)
+            vote_fake = 1 if float(score) >= threshold else 0
+            base_name = model_name.replace("_score", "")
+            weight = float(weights.get(model_name, weights.get(base_name, 1.0)))
+
+            weighted_fake_votes += vote_fake * weight
+            total_weight += weight
+
+        if total_weight == 0:
+            return None
+
+        return weighted_fake_votes / total_weight
+
+
+    def _get_model_threshold(self, model_name):
+        """
+        AASIST uses audio threshold.
+        All video models use video threshold.
+        """
+
+        if model_name == "aasist_score":
+            return float(self.config.get("audio_decision_threshold", 0.5))
+
+        return float(self.config.get("video_decision_threshold", 0.5))
+
+    def _stacking_fusion(self, individual_scores):
+        """
+        Perform stacking using a trained meta-model.
+
+        Expected feature order:
+        [aasist_score, efficientnet_score, mesonet_score, xceptionnet_score]
+        """
+
+        if self.stacking_model is None:
+            logger.warning("Stacking model not loaded. Using mean fusion fallback.")
+            return self._mean_fusion(list(individual_scores.values()))
+
+        feature_order = [
+            "aasist_score",
+            "efficientnet_score",
+            "mesonet_score",
+            "xceptionnet_score",
+        ]
+
+        features = []
+        for key in feature_order:
+            score = individual_scores.get(key)
+            if score is None:
+                score = 0.5  # neutral fallback if one model failed
+            features.append(float(score))
+
+        X = pd.DataFrame([features], columns=feature_order)
+
+        try:
+            logger.info(f"Stacking features: {features}")
+
+            if hasattr(self.stacking_model, "predict_proba"):
+                prob_fake = self.stacking_model.predict_proba(X)[0][1]
+                logger.info(f"Stacking output (prob_fake): {prob_fake}")
+                return float(prob_fake)
+
+            pred = self.stacking_model.predict(X)[0]
+            logger.info(f"Stacking raw output: {pred}")
+            return float(pred)
+
+        except Exception as e:
+            logger.warning(f"Stacking inference failed: {e}. Using mean fusion fallback.")
+            return self._mean_fusion(list(individual_scores.values()))
+
 
 def print_output(result, video_idx):
-    logger.info(f"==================================")
+
+    confidence = result["confidence"]
+    confidence_str = "N/A" if confidence is None else f"{confidence:.2%}"
+
+    logger.info("==================================")
     logger.info(f"Video {video_idx}")
     logger.info(f"Is Real: {result['is_real']}")
-    logger.info(f"Confidence: {result['confidence']:.2%}")
+    logger.info(f"Confidence: {confidence_str}")
     logger.info(f"Audio Score: {result['audio_score']}")
     logger.info(f"Video Score: {result['video_score']}")
+    logger.info(f"Individual Scores: {result.get('individual_scores', {})}")
     logger.info(f"Details: {result['details']}")
-    logger.info(f"==================================")
+    logger.info("==================================")
+
+def get_ground_truth_label(video_name):
+    """
+    Global label for all models:
+    RvRa  -> real
+    RvFa  -> fake
+    FvRa  -> fake
+    FvFa  -> fake
+    """
+    if video_name.startswith("RvRa_"):
+        return True
+
+    if video_name.startswith(("RvFa_", "FvRa_", "FvFa_")):
+        return False
+
+    return None
 
 def print_accuracy(models_correct_prediction, total_videos):
     logger.info(f"==================================")
@@ -240,38 +405,43 @@ def print_metrics(model_predictions, model_name):
     logger.info(f"==================================")
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Extract faces from videos and images using MTCNN",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
 
-    # Input
+    parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--input-dir",
         type=str,
         required=False,
-        help="Input directory containing videos/images",
     )
 
     parser.add_argument(
-        "--config", type=str, required=False, default="./backend/config/ensemble.yaml"
+        "--config",
+        type=str,
+        default="./backend/config/ensemble.yaml",
     )
 
     args = parser.parse_args()
 
-    config_path = args.config
+    # -------------------------
+    # LOAD CONFIG
+    # -------------------------
 
-    with open(config_path, "r") as file:
+    with open(args.config, "r") as file:
         cfg = yaml.safe_load(file)
 
     device = cfg["device"]
+
     if device == "cuda" and not torch.cuda.is_available():
-        logger.warning("CUDA not available, using CPU")
         device = "cpu"
 
-    # Initialize MTCNN
-    logger.info("Initializing MTCNN...")
+    cfg["device"] = device
+
+    # -------------------------
+    # INIT MTCNN
+    # -------------------------
+
     mtcnn_cfg = cfg["mtcnn"]
+
     mtcnn = MTCNN(
         margin=mtcnn_cfg["margin"],
         min_face_size=mtcnn_cfg["min_face_size"],
@@ -280,108 +450,152 @@ def main():
         post_process=mtcnn_cfg["post_process"],
         select_largest=mtcnn_cfg["select_largest"],
         keep_all=mtcnn_cfg["keep_all"],
-        device=device
+        device=device,
     )
+
+    # -------------------------
+    # INPUT PATH (Both file and Directory)
+    # -------------------------
 
     if args.input_dir:
         input_path = args.input_dir
     else:
         input_path = cfg["datasets"]["FakeAVCeleb"]["example_video_set_path"]
 
-    detector = DeepfakeDetector(config=cfg, device=device)
+    if not os.path.exists(input_path):
+        logger.error(f"Invalid input path: {input_path}")
+        return
+
     if os.path.isfile(input_path):
-        result = detector.analyze(
-            input_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
-        )
-        print_output(result, 0)
+        videos = [input_path]
     elif os.path.isdir(input_path):
-        # load fakeavceleb metadata
-        df = pd.read_csv(cfg["datasets"]["FakeAVCeleb"]["metadata"])
+        videos = [
+            os.path.join(input_path, video)
+            for video in sorted(os.listdir(input_path))
+            if os.path.isfile(os.path.join(input_path, video))
+        ]
+    else:
+        logger.error(f"Input path is neither a file nor a directory: {input_path}")
+        return
 
-        # rename missing column
-        df = df.rename(columns={"Unnamed: 9": "folder_path"})
+    detector = DeepfakeDetector(config=cfg, device=device)
 
-        models_correct_prediction = {
-            "efficientnet_correct_prediction": 0,
-            "mesonet_correct_prediction": 0,
-            "xeceptionnet_correct_prediction": 0,
-            "aasist_correct_prediction": 0,
-            "ensemble_correct_prediction": 0,
-        }
-        
-        models_predictions = {
-            "efficientnet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
-            "mesonet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
-            "xceptionnet": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
-            "aasist": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
-            "ensemble": {"tp": 0, "tn": 0, "fp": 0, "fn": 0},
-        }
+    # -------------------------
+    # ACCURACY COUNTERS
+    # -------------------------
 
-        for idx, video_path in enumerate(os.listdir(input_path)):
-            full_path = os.path.join(input_path, video_path)
-            result = detector.analyze(
-                full_path, mtcnn, cfg["batch_size"], cfg["frame_skip"], cfg["decision_threshold"]
+    efficientnet_correct = 0
+    efficientnet_total = 0
+
+    mesonet_correct = 0
+    mesonet_total = 0
+
+    xceptionnet_correct = 0
+    xceptionnet_total = 0
+
+    aasist_correct = 0
+    aasist_total = 0
+
+    ensemble_correct = 0
+    ensemble_total = 0
+
+    # -------------------------
+    # PROCESS DATASET
+    # -------------------------
+
+    for idx, full_path in enumerate(videos):
+
+        video = os.path.basename(full_path)
+
+        ground_truth = get_ground_truth_label(video)
+
+        if ground_truth is None:
+            logger.warning(
+                f"Skipping {video}: could not determine ground truth from filename prefix."
             )
-            # print result for one video
-            print_output(result, idx)
-            if cfg["compare_baseline_accuracy"]:
-                ground_truth_video, ground_truth_audio = get_video_ground_truth(
-                    full_path
-                )
-                if ground_truth_audio == None or ground_truth_video == None:
-                    continue
-                if result["video_score"] is not None:
-                    update_prediction(
-                        models_predictions["efficientnet"], 
-                        result["individual_prediction"]["efficientnet_prediction"], 
-                        ground_truth_video)
-                    update_prediction(
-                        models_predictions["mesonet"], 
-                        result["individual_prediction"]["mesonet_prediction"], 
-                        ground_truth_video)
-                    update_prediction(
-                        models_predictions["xceptionnet"], 
-                        result["individual_prediction"]["xceptionnet_prediction"], 
-                        ground_truth_video)
-                if result["audio_score"] is not None:
-                    update_prediction(
-                        models_predictions["aasist"], 
-                        result["individual_prediction"]["aasist_prediction"], 
-                        ground_truth_audio)
-                if result["audio_score"] is None or result["video_score"] is None: 
-                    continue
-                if result["individual_prediction"]["efficientnet_prediction"] == ground_truth_video:
-                    models_correct_prediction["efficientnet_correct_prediction"] += 1
-                if result["individual_prediction"]["mesonet_prediction"] == ground_truth_video:
-                    models_correct_prediction["mesonet_correct_prediction"] += 1
-                if result["individual_prediction"]["xceptionnet_prediction"] == ground_truth_video:
-                    models_correct_prediction["xeceptionnet_correct_prediction"] += 1
-                if result["individual_prediction"]["aasist_prediction"] == ground_truth_audio:
-                    models_correct_prediction["aasist_correct_prediction"] += 1
-                
-                # update predictions
-                overall_truth = ground_truth_audio and ground_truth_video
-                # If the model's prediction matches the overall truth, it is correct
-                # Print the ground truths
-                logger.info(f"Ground Truth Video: {ground_truth_video} | Ground Truth Audio: {ground_truth_audio} | Overall Truth: {overall_truth}")
-                # Added the video_path to the print statement so you can verify the file
-                logger.info(f"File: {video_path} | GT Video: {ground_truth_video} | GT Audio: {ground_truth_audio} | Overall Truth: {overall_truth}")
-                
-                if result["is_real"] == overall_truth:
-                    logger.info("Model has made a correct predicition")
-                    models_correct_prediction["ensemble_correct_prediction"] += 1
-                update_prediction(
-                    models_predictions["ensemble"], 
-                    result["is_real"], 
-                    overall_truth)
-        
-        detector.video_handler.cleanup()
-        if cfg["compare_baseline_accuracy"]:
-            print_accuracy(models_correct_prediction, len(os.listdir(input_path)))
-            print_metrics(models_predictions["efficientnet"], "EfficientNet")
-            print_metrics(models_predictions["mesonet"], "MesoNet")
-            print_metrics(models_predictions["xceptionnet"], "XceptionNet")
-            print_metrics(models_predictions["aasist"], "AASIST")
-            print_metrics(models_predictions["ensemble"], "Ensemble")
+            continue
+
+        try:
+
+            result = detector.analyze(
+                full_path,
+                mtcnn,
+                cfg["batch_size"],
+                cfg["frame_skip"],
+            )
+
+        except Exception as e:
+
+            logger.error(f"Failed on video {video}: {e}")
+            continue
+
+        print_output(result, idx)
+
+        scores = result.get("individual_scores", {})
+
+        if "efficientnet_score" in scores:
+            efficientnet_total += 1
+            pred = scores["efficientnet_score"] < cfg["video_decision_threshold"]
+            if pred == ground_truth:
+                efficientnet_correct += 1
+
+        if "mesonet_score" in scores:
+            mesonet_total += 1
+            pred = scores["mesonet_score"] < cfg["video_decision_threshold"]
+            if pred == ground_truth:
+                mesonet_correct += 1
+
+        if "xceptionnet_score" in scores:
+            xceptionnet_total += 1
+            pred = scores["xceptionnet_score"] < cfg["video_decision_threshold"]
+            if pred == ground_truth:
+                xceptionnet_correct += 1
+
+        if "aasist_score" in scores:
+            aasist_total += 1
+            pred = scores["aasist_score"] < cfg["audio_decision_threshold"]
+            if pred == ground_truth:
+                aasist_correct += 1
+
+        if result["is_real"] is not None:
+            ensemble_total += 1
+            if result["is_real"] == ground_truth:
+                ensemble_correct += 1
+
+    # -------------------------
+    # FINAL RESULTS
+    # -------------------------
+
+    logger.info("==================================")
+
+    if efficientnet_total:
+        logger.info(
+            f"Efficientnet accuracy: {efficientnet_correct/efficientnet_total:.4f} ({efficientnet_correct}/{efficientnet_total})"
+        )
+
+    if mesonet_total:
+        logger.info(
+            f"Mesonet accuracy: {mesonet_correct/mesonet_total:.4f}({mesonet_correct}/{mesonet_total})"
+        )
+
+    if xceptionnet_total:
+        logger.info(
+            f"Xceptionnet accuracy: {xceptionnet_correct/xceptionnet_total:.4f}({xceptionnet_correct}/{xceptionnet_total})"
+        )
+
+    if aasist_total:
+        logger.info(
+            f"Aasist accuracy: {aasist_correct/aasist_total:.4f}({aasist_correct}/{aasist_total})"
+        )
+
+    if ensemble_total:
+        logger.info(
+            f"Ensemble accuracy: {ensemble_correct/ensemble_total:.4f}({ensemble_correct}/{ensemble_total})"
+        )
+
+    logger.info("==================================")
+    detector.video_handler.cleanup()
+
+
 if __name__ == "__main__":
     main()
