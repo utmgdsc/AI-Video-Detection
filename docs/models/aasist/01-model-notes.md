@@ -63,5 +63,5 @@ AASIST is highly relevant for AI video detection because many deepfake videos re
 
 ## Open questions
 
-- Questions to ask in weekly meeting:
+- Questions for the next project sync:
 - Things to verify:

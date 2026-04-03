@@ -1,6 +1,6 @@
 # Meeting — [DATE]
 
-**Type:** [With Prof / Mentor-Only]
+**Type:** [Advisor / Internal Project]
 **Time:** [HH:MM – HH:MM]
 **Attendees:** [Names]
 

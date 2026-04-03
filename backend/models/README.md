@@ -6,7 +6,7 @@ This directory uses a hybrid approach for managing models:
 
 ```
 backend/models/
-├── DeepFake-EfficientNet/     # Full EfficientNet repo (cloned/added by team member)
+├── DeepFake-EfficientNet/     # Full EfficientNet repo (cloned/added by contributor)
 ├── XceptionNet-Detector/      # Full XceptionNet repo (add your full repo here)
 ├── MesoNet/                   # Full MesoNet repo (add your full repo here)
 ├── AASIST/                    # Full AASIST repo (add your full repo here)
@@ -19,12 +19,12 @@ backend/models/
 
 ## Why This Approach?
 
-1. **Team members keep full working code** - Clone/add your entire model repo
+1. **Contributors keep full working code** - Clone/add your entire model repo
 2. **Wrappers provide standard interface** - For the unified pipeline (later)
 3. **Low risk** - If integration doesn't work, we still have documented working models
 4. **Independent work** - Each person can work without breaking others' code
 
-## For Team Members
+## For Contributors
 
 ### Step 1: Add Your Model Repo
 
@@ -73,11 +73,11 @@ score = efficientnet.predict(model, image)
 print(f"Fake probability: {score}")
 ```
 
-## Integration Timeline
+## Integration Phases
 
-- **Week 1-6:** Add full repos, document in `docs/models/`
-- **Week 7-8:** Create wrappers for unified pipeline
-- **Week 9:** Test integration in `backend/main.py`
+- **Phase 1:** Add full repos, document in `docs/models/`
+- **Phase 2:** Create wrappers for unified pipeline
+- **Phase 3:** Test integration in `backend/main.py`
 
 ## Notes
 

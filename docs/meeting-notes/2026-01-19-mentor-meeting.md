@@ -1,8 +1,8 @@
 # Meeting — 2026-01-19
 
-**Type:** Mentor-Only
+**Type:** Internal Project
 **Time:** 10:00 PM
-**Attendees:** Yousef (Mentor), Marvin, Laiba, Frank, Marco
+**Attendees:** Yousef, Marvin, Laiba, Frank, Marco
 
 ## Discussion
 

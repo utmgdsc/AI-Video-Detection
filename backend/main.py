@@ -365,6 +365,48 @@ def get_ground_truth_label(video_name):
 
     return None
 
+def print_accuracy(models_correct_prediction, total_videos):
+    logger.info(f"==================================")
+    logger.info(f"EfficientNet accuracy: {models_correct_prediction['efficientnet_correct_prediction']/total_videos}")
+    logger.info(f"MesoNet accuracy: {models_correct_prediction['mesonet_correct_prediction']/total_videos}")
+    logger.info(f"XeceptionNet accuracy: {models_correct_prediction['xeceptionnet_correct_prediction']/total_videos}")
+    logger.info(f"AAsist accuracy: {models_correct_prediction['aasist_correct_prediction']/total_videos}")
+    logger.info(f"Ensemble accuracy: {models_correct_prediction['ensemble_correct_prediction']/total_videos}")
+    logger.info(f"==================================")
+
+def update_prediction(model_predictions, prediction, ground_truth):
+    fake_pred = not prediction
+    fake_gt = not ground_truth
+
+    if fake_pred and fake_gt: 
+        model_predictions["tp"] += 1
+    elif fake_pred and not fake_gt: 
+        model_predictions["fp"] += 1
+    elif not fake_pred and fake_gt: 
+        model_predictions["fn"] += 1
+    else: 
+        model_predictions["tn"] += 1
+
+def print_metrics(model_predictions, model_name):
+    tp = model_predictions["tp"]
+    tn = model_predictions["tn"]
+    fp = model_predictions["fp"]
+    fn = model_predictions["fn"]
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+    logger.info(f"==================================")
+    logger.info(f"{model_name} metrics: ")
+    logger.info(f"Precision: {precision:.4f}")
+    logger.info(f"Recall: {recall:.4f}")
+    logger.info(f"Confusion Matrix:")
+    logger.info(f"                  Predicted")
+    logger.info(f"               Real      Fake")
+    logger.info(f"Actual Real   {tn:6d}    {fp:6d}")
+    logger.info(f"Actual Fake   {fn:6d}    {tp:6d}")
+    logger.info(f"==================================")
+
 def main():
 
     parser = argparse.ArgumentParser()

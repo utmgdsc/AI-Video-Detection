@@ -1,8 +1,8 @@
 # Meeting — 2026-01-26
 
-**Type:** With Prof
+**Type:** Advisor
 **Time:** 10:00 AM
-**Attendees:** Prof. Josh, Laiba, Marco
+**Attendees:** Josh, Laiba, Marco
 
 ## Discussion
 
