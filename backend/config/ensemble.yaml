@@ -1,7 +1,6 @@
 # Ensemble Configuration
 device: "cuda" # cuda or cpu
 ensemble_method: stacking # Options: 'mean', 'weighted_average', 'weighted_voting' "majority_voting"
-ensemble_threshold: 0.5
 stacking_model_path: ./backend/models/stacking/stacking_model.pkl
 output_dir: "./outputs/ensemble_results/"
 batch_size: 60
@@ -39,7 +38,7 @@ datasets:
   FakeAVCeleb:
     dataset_path: "./backend/dataset/FakeAVCeleb_v1.2"
     example_video_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/FakeVideo-RealAudio/African/men/id00076/00109_1.mp4"
-    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/"
+    example_video_set_path: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/test/balanced_test_set"
     metadata: "./backend/dataset/FakeAVCeleb_v1.2/FakeAVCeleb_v1.2/meta_data.csv"
 
 # MTCNN config 
