@@ -77,9 +77,9 @@ models:
     active: true
     architecture: "Meso4" # Options are "Meso1", "Meso4", "MesoInception4"
     weights_path: "./weights/meso4_weight_refit_val_acc.h5"
-    env_path: "python3"
+    env_path: "/home/gdgteam1/miniconda3/envs/mesonet/bin/python3" # Please do not touch the environment
     image_size: 256
-    port: 8004
+    port: 8000
     # scoring_method: Options are
     #   "mean score":     mean of [face0_score, face1_score, ..., faceN_score]
     #   "median score":   median of [face0_score, face1_score, ..., faceN_score]

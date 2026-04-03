@@ -5,8 +5,8 @@ import itertools
 
 video_thresholds = [0.1, 0.2, 0.4]
 audio_thresholds = [0.05, 0.1, 0.2, 0.3, 0.5, 0.8]
-frame_skips = [15, 30, 60]
-ensemble_thresholds = [0.4, 0.5, 0.6] 
+frame_skips = [15, 30]
+ensemble_thresholds = [0.3, 0.4, 0.5, 0.6] 
 ensemble_methods = ["mean", "weighted_average", "majority_voting", "weighted_voting", "stacking"] 
 
 original_yaml_path = "./backend/config/ensemble.yaml"
@@ -60,7 +60,7 @@ def run_grid_search_sequential_folders():
         with open(output_file, "w") as f:
             f.write(f"Testing V: {v_thresh} | A: {a_thresh} | FS: {f_skip} | E_Thresh: {e_thresh} | Method: {method}\n{'='*50}\n")
             subprocess.run(
-                ["python", "-u", main_script_name, "--config", temp_yaml_path],
+                ["python", main_script_name, "--config", temp_yaml_path],
                 stdout=f,
                 stderr=subprocess.STDOUT,
                 text=True,

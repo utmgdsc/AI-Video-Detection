@@ -79,7 +79,7 @@ class MesoNetClient:
             debug("Server is running.")
         except:
             print("Starting MesoNet server...")
-            self.start_server()
+            self.start_server(save_log=False)
             debug("Waiting until ready...")
             self.wait_until_ready()
 
