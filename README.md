@@ -104,7 +104,7 @@ npm run dev
 ```
 
 ---
-## 📊 Results
+## Results
 
 ### Overall Performance
 
@@ -131,7 +131,7 @@ npm run dev
 
 ---
 
-## ⚠️ Limitations
+## Limitations
 
 - Performance drops on unseen datasets
 - Audio model generalization is weaker
