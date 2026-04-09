@@ -76,14 +76,20 @@ npm install
 
 ## Model Weights
 
-Download pretrained weights and place in `weights/`:
+Download required pretrained weights and place them in the specified paths below:
 
 | Model | Download from | Place in |
 |-------|--------------|----------|
-| XceptionNet | [https://drive.google.com/drive/folders/1GNtk3hLq6sUGZCGx8fFttvyNYH8nrQS8] | `weights/xception.pth` |
-| EfficientNet | [https://github.com/umitkacar/multimodal-deepfake-detector] | `weights/efficientnet.pth` |
-| MesoNet | [https://github.com/DariusAf/MesoNet/tree/master/weights] | `weights/mesonet.pth` |
-| AASIST | [https://github.com/clovaai/aasist/blob/main/models/weights/AASIST.pth] | `weights/aasist.pth` |
+| XceptionNet | [https://drive.google.com/drive/folders/1GNtk3hLq6sUGZCGx8fFttvyNYH8nrQS8] | `backend/models/XceptionNet-Detector/Deepfake-Detection/weights/deepfake_c0_xception.pkl` |
+| EfficientNet | Trained from scratch using FaceForensics++ | outputs/checkpoints/best_model.pth |
+| MesoNet | [https://github.com/DariusAf/MesoNet/tree/master/weights] | `backend/models/MesoNet/weights/Meso4_custom_weight1_epoch7.h5` |
+| AASIST | [https://github.com/clovaai/aasist/blob/main/models/weights/AASIST.pth] | `backend/models/AASIST/aasist_detector/weights/AASIST.pth` |
+
+> Note: EfficientNet is trained as part of this pipeline. No pretrained weights are required. To train EfficientNet from scratch:
+
+```bash
+python backend/models/EfficientNet/train.py
+```
 
 ---
 
