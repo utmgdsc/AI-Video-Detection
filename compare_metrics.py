@@ -3,7 +3,7 @@ import re
 import csv
 
 # Ensure this matches the folder containing your v0.1_... folders
-base_dir = "./result/balanced_test_set_experiment_results" 
+base_dir = "./result/grid_search_results" 
 output_csv = "comprehensive_metrics_comparison.csv"
 
 models = ["EfficientNet", "MesoNet", "XceptionNet", "AASIST", "Ensemble"]

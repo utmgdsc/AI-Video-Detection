@@ -11,7 +11,7 @@ ensemble_methods = ["mean", "weighted_average", "majority_voting", "weighted_vot
 
 original_yaml_path = "./backend/config/ensemble.yaml"
 main_script_name = "backend/main.py" 
-base_output_dir = "./experiment_results"
+base_output_dir = "./result/grid_search_results"
 
 def run_grid_search_sequential_folders():
     with open(original_yaml_path, "r") as file:

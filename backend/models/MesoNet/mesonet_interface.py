@@ -55,7 +55,7 @@ class MesoNetClient:
         
         if "env_path" not in cfg:
             raise AttributeError("MesoNet env_path not found. See ensemble.yaml MesoNet env_path.")
-        self.env_path = cfg["env_path"]
+        self.env_path = os.getenv("MESONET_PYTHON_PATH", cfg["env_path"])
         
         if "port" not in cfg:
             warnings.warn(f"Port not found in ensemble.yaml. Using default '{self.port}'.", UserWarning)
