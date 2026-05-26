@@ -17,6 +17,7 @@ import numpy as np
 import time
 import os
 import sys
+import shutil
 import warnings
 
 PRINT_DEBUG = True
@@ -88,15 +89,16 @@ class MesoNetClient:
 
     def start_server(self, save_log=False):
         debug("Trying to run server")
+        # Prefer the installed uvicorn script so we avoid the wrong Python
+        # interpreter (e.g. /usr/bin/python3.11 which lacks uvicorn).
+        uvicorn_bin = shutil.which("uvicorn")
+        if uvicorn_bin:
+            cmd = [uvicorn_bin, "mesonet_server:app", "--host", self.host, "--port", str(self.port)]
+        else:
+            cmd = [self.env_path, "-u", "-m", "uvicorn", "mesonet_server:app", "--host", self.host, "--port", str(self.port)]
+        debug(f"Using command: {cmd[0]}")
         self.server_process = subprocess.Popen(
-            [
-                self.env_path,
-                "-u",
-                "-m", "uvicorn",
-                "mesonet_server:app",
-                "--host", f"{self.host}",
-                "--port", f"{self.port}"
-            ],
+            cmd,
             cwd=BASE_DIR,
             stdout=sys.stderr,
             stderr=sys.stderr,
