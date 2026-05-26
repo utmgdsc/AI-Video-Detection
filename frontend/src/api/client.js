@@ -1,6 +1,10 @@
+// In production, set VITE_API_URL to the Modal endpoint URL.
+// In dev, leave it unset — Vite's proxy handles /api and /health.
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 export async function checkHealth() {
   try {
-    const res = await fetch('/health/ready');
+    const res = await fetch(`${API_BASE}/health/ready`);
     if (!res.ok) return false;
     const data = await res.json();
     return data.ready;
@@ -15,7 +19,7 @@ export async function analyzeVideo(file) {
   formData.append('video_file', file);
 
   try {
-    const res = await fetch('/api/v1/analyze', {
+    const res = await fetch(`${API_BASE}/api/v1/analyze`, {
       method: 'POST',
       body: formData,
     });

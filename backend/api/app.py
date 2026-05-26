@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes.analyze import router as analyze_router
 from backend.api.routes.health import router as health_router
@@ -50,6 +51,15 @@ def create_app() -> FastAPI:
         version="0.1.0",
     )
     app.state.api_state = APIState()
+
+    allowed_origins = os.getenv("AIVD_CORS_ORIGINS", "*").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     app.include_router(health_router)
     app.include_router(analyze_router)
