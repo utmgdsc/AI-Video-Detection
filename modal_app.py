@@ -93,8 +93,6 @@ app = modal.App("deepfake-detector")
         "AIVD_XCEPTION_WEIGHTS_PATH": "/weights/xceptionnet.pkl",
         "AIVD_MESONET_WEIGHTS_PATH": "/weights/mesonet.h5",
         "AIVD_AASIST_WEIGHTS_PATH": "/weights/aasist.pth",
-        # MesoNet subprocess uses the same Python as the container
-        "AIVD_MESONET_ENV_PATH": "/usr/bin/python3",
     },
 )
 @modal.asgi_app()
