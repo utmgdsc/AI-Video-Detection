@@ -69,27 +69,23 @@ class DeepfakeDetector:
                 sample_rate=frame_skip,
             )
             results["video_score"] = video_result["combined_score"]
-            if results["video_score"] is not None:
-                results["individual_prediction"]["efficientnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["efficientnet_score"] > 0.5
-                    else True
-                )
-                results["individual_prediction"]["mesonet_prediction"] = (
-                    False if video_result["individual_scores"]["mesonet_score"] > 0.5 else True
-                )
-                results["individual_prediction"]["xceptionnet_prediction"] = (
-                    False
-                    if video_result["individual_scores"]["xceptionnet_score"] > 0.5
-                    else True
-                )
+            raw_scores = video_result.get("individual_scores", {})
+            efficientnet_score = raw_scores.get("efficientnet_score")
+            mesonet_score = raw_scores.get("mesonet_score")
+            xceptionnet_score = raw_scores.get("xceptionnet_score")
 
-                # Include raw numeric scores for UI display
-                results["individual_scores"] = {
-                    "efficientnet_score": float(efficientnet_score) if efficientnet_score is not None else None,
-                    "mesonet_score": float(mesonet_score) if mesonet_score is not None else None,
-                    "xceptionnet_score": float(xceptionnet_score) if xceptionnet_score is not None else None,
-                }
+            if efficientnet_score is not None:
+                results["individual_prediction"]["efficientnet_prediction"] = efficientnet_score <= 0.5
+            if mesonet_score is not None:
+                results["individual_prediction"]["mesonet_prediction"] = mesonet_score <= 0.5
+            if xceptionnet_score is not None:
+                results["individual_prediction"]["xceptionnet_prediction"] = xceptionnet_score <= 0.5
+
+            results["individual_scores"] = {
+                "efficientnet_score": float(efficientnet_score) if efficientnet_score is not None else None,
+                "mesonet_score": float(mesonet_score) if mesonet_score is not None else None,
+                "xceptionnet_score": float(xceptionnet_score) if xceptionnet_score is not None else None,
+            }
         except Exception as e:
             results["details"] += f"Video analysis failed: {e}\n"
             raise
@@ -112,8 +108,12 @@ class DeepfakeDetector:
 
     def _combine_scores(self, audio_score: float | None, video_score: float | None) -> float | None:
         """Combine audio and video scores into one confidence score."""
+        if audio_score is None and video_score is None:
+            return None
         if audio_score is None:
             return video_score
+        if video_score is None:
+            return audio_score
         return (audio_score + video_score) / 2
 
 
