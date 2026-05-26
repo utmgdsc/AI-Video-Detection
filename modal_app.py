@@ -31,7 +31,7 @@ image = (
         "torchvision>=0.15.0",
         "torchaudio>=2.0.0",
         # TensorFlow for MesoNet (TF1 compat mode via tf.compat.v1)
-        "tensorflow>=2.13.0,<2.16.0",
+        "tensorflow>=2.16.0",
         # Vision
         "opencv-python-headless>=4.8.0",
         "Pillow>=10.0.0",
@@ -47,6 +47,13 @@ image = (
         "scipy>=1.10.0",
         "scikit-learn>=1.3.0",
         "pandas>=2.0.0",
+        # Plotting — pulled in transitively by deepfake_detector.utils.visualization
+        "matplotlib>=3.7.0",
+        "seaborn>=0.12.0",
+        # Progress bars — pulled in by deepfake_detector.utils.logger
+        "tqdm>=4.65.0",
+        # HTTP client — used by mesonet_interface to talk to MesoNet subprocess
+        "requests>=2.31.0",
         # Web
         "fastapi>=0.100.0",
         "uvicorn[standard]>=0.23.0",
@@ -55,7 +62,7 @@ image = (
         "PyYAML==6.0.1",
     )
     # Bake source code into image at deploy time
-    .copy_local_dir("backend", "/app/backend")
+    .add_local_dir("backend", "/app/backend", copy=True)
     .workdir("/app")
 )
 
@@ -75,10 +82,12 @@ app = modal.App("deepfake-detector")
     volumes={"/weights": weights_volume},
     timeout=300,          # max 5 min per request (long video safety net)
     memory=16384,         # 16 GB RAM
-    container_idle_timeout=300,   # keep warm 5 min after last request
+    scaledown_window=300,          # keep warm 5 min after last request
     env={
         "AIVD_CONFIG_PATH": "/app/backend/config/ensemble.yaml",
         "AIVD_DEVICE": "cuda",
+        # Skip dataset path validation — training datasets are not on the server
+        "AIVD_VALIDATE_PATHS": "false",
         # Weight paths point to the Modal Volume mount
         "AIVD_EFFICIENTNET_WEIGHTS_PATH": "/weights/efficientnet.pth",
         "AIVD_XCEPTION_WEIGHTS_PATH": "/weights/xceptionnet.pkl",

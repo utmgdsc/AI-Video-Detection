@@ -24,7 +24,7 @@ batch_size: 60
 frame_skip: 30
 margin: 50
 min_face_size: 100
-compare_baseline_accuracy: true
+compare_baseline_accuracy: false
 decision_threshold: 0.5
 
 audio_decision_threshold: 0.5

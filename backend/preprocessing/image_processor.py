@@ -14,13 +14,19 @@ from torchvision import transforms
 path = (Path(__file__).resolve().parents[3]
               / "backend/models/XceptionNet-Detector/Deepfake-Detection")
 sys.path.append(str(path))
-from detect_from_video import preprocess_image
-from dataset.transform import xception_default_data_transforms
+try:
+    from detect_from_video import preprocess_image
+    from dataset.transform import xception_default_data_transforms
+    _XCEPTION_PREPROCESSING_AVAILABLE = True
+except ImportError:
+    preprocess_image = None
+    xception_default_data_transforms = {}
+    _XCEPTION_PREPROCESSING_AVAILABLE = False
 
 class MyDataset(Dataset):
     def __init__(self, faces):
         self.faces = faces
-        self.transform = xception_default_data_transforms['test']
+        self.transform = xception_default_data_transforms.get('test')
 
     def __getitem__(self, index):
         face = self.faces[index]
@@ -53,8 +59,10 @@ def preprocess_for_xception(image, target_size=(299, 299)):
     # 2. Convert BGR to RGB
     # 3. Normalize (ImageNet mean/std)
     # 4. Convert to tensor
+    if not _XCEPTION_PREPROCESSING_AVAILABLE:
+        raise RuntimeError("XceptionNet preprocessing unavailable: repo files missing.")
     face = image.detach().cpu().permute(1, 2, 0).numpy()
-    face_np = (face * 255).clip(0, 255).astype("uint8") 
+    face_np = (face * 255).clip(0, 255).astype("uint8")
     face = cv2.cvtColor(face_np, cv2.COLOR_RGB2BGR)
     return preprocess_image(face)
 

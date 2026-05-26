@@ -11,10 +11,11 @@ import numpy as np
 import torch.nn.functional as F
 from backend.models.wrappers import xception, mesonet, efficientnet
 from backend.preprocessing import image_processor
-from backend.models.DeepFake_EfficientNet.deepfake_detector.data import (
-    get_val_transforms,
-)
-from backend.models.wrappers.xception import predict_with_model
+from backend.models.wrappers.xception import _XCEPTION_AVAILABLE
+if _XCEPTION_AVAILABLE:
+    from backend.models.wrappers.xception import predict_with_model
+else:
+    predict_with_model = None
 import logging
 import numpy as np
 import cv2
