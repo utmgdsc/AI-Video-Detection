@@ -87,13 +87,6 @@ class MesoNetClient:
             self.wait_until_ready()
 
     def start_server(self, save_log=False):
-        output = subprocess.DEVNULL
-        if save_log:
-            debug("Trying to open server log")
-            os.makedirs(LOG_DIR, exist_ok=True)
-            self.server_log = open(os.path.join(LOG_DIR, f"meso_server-port-{self.port}.txt"), "a")
-            output = self.server_log
-
         debug("Trying to run server")
         self.server_process = subprocess.Popen(
             [
@@ -105,8 +98,8 @@ class MesoNetClient:
                 "--port", f"{self.port}"
             ],
             cwd=BASE_DIR,
-            stdout=output,
-            stderr=output
+            stdout=sys.stderr,
+            stderr=sys.stderr,
         )
         debug("Server starting...")
 
