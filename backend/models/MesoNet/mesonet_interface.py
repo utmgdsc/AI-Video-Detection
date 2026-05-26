@@ -16,6 +16,7 @@ import requests
 import numpy as np
 import time
 import os
+import sys
 import warnings
 
 PRINT_DEBUG = True
@@ -55,7 +56,9 @@ class MesoNetClient:
         
         if "env_path" not in cfg:
             raise AttributeError("MesoNet env_path not found. See ensemble.yaml MesoNet env_path.")
-        self.env_path = os.getenv("MESONET_PYTHON_PATH", cfg["env_path"])
+        configured = os.getenv("MESONET_PYTHON_PATH", cfg["env_path"])
+        # Fall back to the current interpreter if the configured path doesn't exist
+        self.env_path = configured if os.path.isfile(configured) else sys.executable
         
         if "port" not in cfg:
             warnings.warn(f"Port not found in ensemble.yaml. Using default '{self.port}'.", UserWarning)
