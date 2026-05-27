@@ -1,0 +1,83 @@
+(xception_env) gdgteam1@lisa:~/AI-Video-Detection/backend/models/XceptionNet-Detector/Deepfake-Detection$ python train_CNN.py   -n xception_ff23   -tl ./datalist/ff/train.txt   -vl ./datalist/ff/val.txt   -bz 64   -e 20   -mn xception_ff23.pkl   --continue_train True   -mp ./weights/ffpp_c23.pth
+Using dropout 0.5
+Epoch 1/20
+----------
+epoch train loss: 0.0083 Acc: 0.8576
+epoch val loss: 0.0027 Acc: 0.9258
+Epoch 2/20
+----------
+epoch train loss: 0.0025 Acc: 0.9297
+epoch val loss: 0.0029 Acc: 0.9280
+Epoch 3/20
+----------
+epoch train loss: 0.0017 Acc: 0.9490
+epoch val loss: 0.0032 Acc: 0.9355
+Epoch 4/20
+----------
+epoch train loss: 0.0012 Acc: 0.9606
+epoch val loss: 0.0033 Acc: 0.9364
+Epoch 5/20
+----------
+epoch train loss: 0.0009 Acc: 0.9730
+epoch val loss: 0.0038 Acc: 0.9347
+Epoch 6/20
+----------
+epoch train loss: 0.0006 Acc: 0.9825
+epoch val loss: 0.0048 Acc: 0.9372
+Epoch 7/20
+----------
+epoch train loss: 0.0004 Acc: 0.9879
+epoch val loss: 0.0053 Acc: 0.9379
+Epoch 8/20
+----------
+epoch train loss: 0.0003 Acc: 0.9920
+epoch val loss: 0.0066 Acc: 0.9349
+Epoch 9/20
+----------
+epoch train loss: 0.0002 Acc: 0.9938
+epoch val loss: 0.0068 Acc: 0.9355
+Epoch 10/20
+----------
+epoch train loss: 0.0002 Acc: 0.9952
+epoch val loss: 0.0066 Acc: 0.9352
+Epoch 11/20
+----------
+epoch train loss: 0.0001 Acc: 0.9972
+epoch val loss: 0.0081 Acc: 0.9332
+Epoch 12/20
+----------
+epoch train loss: 0.0001 Acc: 0.9975
+epoch val loss: 0.0086 Acc: 0.9362
+Epoch 13/20
+----------
+epoch train loss: 0.0001 Acc: 0.9982
+epoch val loss: 0.0087 Acc: 0.9335
+Epoch 14/20
+----------
+epoch train loss: 0.0001 Acc: 0.9981
+epoch val loss: 0.0088 Acc: 0.9364
+Epoch 15/20
+----------
+epoch train loss: 0.0001 Acc: 0.9983
+epoch val loss: 0.0093 Acc: 0.9325
+Epoch 16/20
+----------
+epoch train loss: 0.0001 Acc: 0.9990
+epoch val loss: 0.0091 Acc: 0.9352
+Epoch 17/20
+----------
+epoch train loss: 0.0000 Acc: 0.9991
+epoch val loss: 0.0094 Acc: 0.9347
+Epoch 18/20
+----------
+epoch train loss: 0.0000 Acc: 0.9991
+epoch val loss: 0.0094 Acc: 0.9344
+Epoch 19/20
+----------
+epoch train loss: 0.0000 Acc: 0.9991
+epoch val loss: 0.0097 Acc: 0.9337
+Epoch 20/20
+----------
+epoch train loss: 0.0000 Acc: 0.9989
+epoch val loss: 0.0095 Acc: 0.9344
+Best val Acc: 0.9379
