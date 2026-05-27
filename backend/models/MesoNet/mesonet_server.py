@@ -43,7 +43,7 @@ def load_model(data: LoadModel):
         weights_path: string
         }
     """
-    global model, graph
+    global model
 
     debug("Clearing previous model session (no affect if no models were loaded before).")
     # Every time we load a new model, we must clear any potential previous models
