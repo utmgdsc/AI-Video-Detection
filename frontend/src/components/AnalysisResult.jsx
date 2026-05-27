@@ -41,7 +41,7 @@ export default function AnalysisResult({ result, onReset }) {
     { key: 'efficientnet', score: individual_scores.efficientnet_score },
     { key: 'mesonet',      score: individual_scores.mesonet_score },
     { key: 'xceptionnet',  score: individual_scores.xceptionnet_score },
-    { key: 'aasist',       score: individual_scores.aasist_score },
+    { key: 'aasist',       score: audio_score },
   ];
 
   return (
