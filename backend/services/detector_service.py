@@ -45,18 +45,22 @@ class DeepfakeDetector:
         }
 
         # 1. Extract audio (if present)
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            audio_path = f.name
         try:
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-                audio_path = f.name
             separate_audio(video_path, audio_path)
             audio_result = self.audio_handler.process(audio_path)
             results["audio_score"] = audio_result["score"]
             results["individual_prediction"]["aasist_prediction"] = (
                 False if audio_result["score"] > 0.5 else True
             )
-            os.unlink(audio_path)
         except Exception as e:
             results["details"] += f"Audio analysis skipped: {e}\n"
+        finally:
+            try:
+                os.unlink(audio_path)
+            except OSError:
+                pass
 
         # 2. Analyze video
         try:

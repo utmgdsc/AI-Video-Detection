@@ -43,7 +43,14 @@ def load_model(weights_path=None, cuda=True):
         raise RuntimeError("XceptionNet is not available: repo files missing.")
     model = model_selection(modelname='xception', num_out_classes=2, dropout=0.5)
     if weights_path:
-        model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
+        raw = torch.load(weights_path, map_location=torch.device('cpu'))
+        if isinstance(raw, dict):
+            # Checkpoint dict — look for common state_dict keys
+            state_dict = raw.get("state_dict", raw.get("model", raw))
+        else:
+            # Full model object saved with torch.save(model, path)
+            state_dict = raw.state_dict()
+        model.load_state_dict(state_dict)
     if isinstance(model, torch.nn.DataParallel):
         model = model.module
     if cuda and torch.cuda.is_available():

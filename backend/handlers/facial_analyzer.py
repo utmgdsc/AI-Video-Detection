@@ -232,6 +232,8 @@ class XceptionNetFacialAnalyzer(FacialAnalyzer):
                 'details': str
             }
         """
+        if predict_with_model is None:
+            raise RuntimeError("XceptionNet is unavailable: repo files missing.")
         if self.model is None:
             self.load_model(model_cfg["weights_path"], self.device)
         summary = {
@@ -324,7 +326,7 @@ class MesoNetFacialAnalyzer(FacialAnalyzer):
         
         summary = {
             "score": score,
-            "per_frame_score": results,
+            "per_frame_score": results.tolist(),
             "details": "This contains MesoNet results.",
         }
         print("mesonet:"+ str(summary["score"]))
