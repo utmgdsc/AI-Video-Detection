@@ -106,7 +106,8 @@ class MesoNetClient:
         debug("Server starting...")
 
     def wait_until_ready(self):
-        for _ in range(20):
+        # TensorFlow can take 15-20 s to initialise; allow up to 60 s total.
+        for _ in range(60):
             try:
                 debug("Testing connection...")
                 response = requests.get(self.url + "/test_server", timeout=1)
@@ -114,7 +115,7 @@ class MesoNetClient:
                 debug("Server ready.")
                 return
             except:
-                time.sleep(0.5)
+                time.sleep(1)
 
         raise RuntimeError("Server failed to start")
 
