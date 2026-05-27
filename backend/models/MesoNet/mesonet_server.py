@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import tensorflow as tf
 
+# Run in TF2 eager mode (TF 2.16+). Do NOT call disable_eager_execution().
 from classifiers import *
 
 PRINT_DEBUGS = False
@@ -20,7 +21,6 @@ class Process(BaseModel):
 app = FastAPI()
 
 model = None
-graph = None
 
 ARCHITECTURE_MAP = {
     "Meso1": Meso1,
@@ -43,7 +43,7 @@ def load_model(data: LoadModel):
         weights_path: string
         }
     """
-    global model, graph
+    global model
 
     debug("Clearing previous model session (no affect if no models were loaded before).")
     # Every time we load a new model, we must clear any potential previous models
@@ -57,8 +57,12 @@ def load_model(data: LoadModel):
     model = ARCHITECTURE_MAP[data.architecture]()
 
     debug(f"Loading weight on path: '{data.weights_path}'")
-    model.load(data.weights_path)
-    graph = tf.get_default_graph()
+    try:
+        model.load(data.weights_path)
+    except Exception as exc:
+        # Keep API contract stable for caller and avoid hard 500 crashes.
+        model = None
+        return {"success": False, "error": str(exc)}
 
     debug(f"MODEL SUCCESSFULLY LOADED.")
     return {"success": True}
@@ -66,10 +70,10 @@ def load_model(data: LoadModel):
 
 @app.post("/process")
 def process(data: Process):
-    global model, graph
+    global model
     images = []
 
-    if model is None or graph is None:
+    if model is None:
         debug(f"Error: no model loaded.")
         return {"success": False,
                 "error": "No model loaded."}
@@ -82,9 +86,8 @@ def process(data: Process):
     if images.max() > 1.0:
         images = images / 255.0
 
-    with graph.as_default():
-        debug(f"BEGIN MAKING PREDICTIONS...")
-        preds = model.predict(images).tolist()
+    debug(f"BEGIN MAKING PREDICTIONS...")
+    preds = model.predict(images).tolist()
 
     debug(f"PREDICTIONS MADE, RETURNING RESULTS AS:")
     debug(f"{preds}")

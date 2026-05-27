@@ -60,10 +60,36 @@ Download pretrained weights and place in `weights/`:
 python -m backend.main <video_path>
 ```
 
+### 5. Run API backend (Step 3)
+
+```bash
+pip install -r backend/requirements.txt
+uvicorn backend.api.app:app --host 0.0.0.0 --port 8080 --reload
+```
+
+Optional API env vars:
+- `AIVD_CONFIG_PATH` (default `./backend/config/ensemble.yaml`)
+- `AIVD_MAX_UPLOAD_SIZE_BYTES` (default `1073741824`)
+- `AIVD_ALLOWED_VIDEO_SUFFIXES` (default `.mp4,.mov,.avi,.mkv,.webm`)
+- `AIVD_ALLOWED_VIDEO_MIME_TYPES` (default `video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,application/octet-stream`)
+
+Core endpoints:
+- `GET /health/live`
+- `GET /health/ready`
+- `POST /api/v1/analyze` (multipart file upload, returns immediate analysis result)
+
 ## Folder Structure
 
 ```
 backend/
+├── api/                       # FastAPI app and routes
+│   ├── app.py
+│   ├── schemas.py
+│   └── routes/
+│       ├── analyze.py
+│       └── health.py
+├── core/                      # Typed config and settings validation
+│   └── config.py
 ├── models/                    # Full model repositories
 │   ├── DeepFake-EfficientNet/ # Full repo (example from PR #1)
 │   ├── XceptionNet-Detector/  # Add your full repo here
@@ -84,7 +110,12 @@ backend/
 │   ├── video_processor.py
 │   ├── audio_processor.py
 │   └── image_processor.py
-├── main.py                    # Orchestrator
+├── services/                  # Reusable service layer
+│   └── detector_service.py
+├── utils/                     # Upload and cleanup helpers
+│   ├── file_storage.py
+│   └── cleanup.py
+├── main.py                    # CLI entrypoint
 └── requirements.txt
 ```
 

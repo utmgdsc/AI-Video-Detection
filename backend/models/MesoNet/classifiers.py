@@ -18,7 +18,13 @@ class Classifier:
     def predict(self, x):
         if x.size == 0:
             return []
-        return self.model.predict(x)
+        # Keras 3 / TF 2.16: model.predict() creates a tf.data.Dataset
+        # internally which fails when called from a non-main thread or
+        # in certain eager-mode edge cases. Calling the model directly
+        # as a callable avoids the tf.data pipeline entirely.
+        import tensorflow as tf
+        x_tensor = tf.constant(x, dtype=tf.float32)
+        return self.model(x_tensor, training=False).numpy()
     
     def fit(self, x, y):
         return self.model.train_on_batch(x, y)
@@ -36,9 +42,9 @@ class Meso1(Classifier):
     """
     def __init__(self, learning_rate = 0.001, dl_rate = 1):
         self.model = self.init_model(dl_rate)
-        optimizer = Adam(lr = learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
         self.model.compile(optimizer = optimizer, loss = 'mean_squared_error', metrics = ['accuracy'])
-    
+
     def init_model(self, dl_rate):
         x = Input(shape = (IMGWIDTH, IMGWIDTH, 3))
         
@@ -56,7 +62,7 @@ class Meso1(Classifier):
 class Meso4(Classifier):
     def __init__(self, learning_rate = 0.001):
         self.model = self.init_model()
-        optimizer = Adam(lr = learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
         self.model.compile(optimizer = optimizer, loss = 'mean_squared_error', metrics = ['accuracy'])
     
     def init_model(self): 
@@ -81,7 +87,7 @@ class Meso4(Classifier):
         y = Flatten()(x4)
         y = Dropout(0.5)(y)
         y = Dense(16)(y)
-        y = LeakyReLU(alpha=0.1)(y)
+        y = LeakyReLU(negative_slope=0.1)(y)
         y = Dropout(0.5)(y)
         y = Dense(1, activation = 'sigmoid')(y)
 
@@ -91,7 +97,7 @@ class Meso4(Classifier):
 class MesoInception4(Classifier):
     def __init__(self, learning_rate = 0.001):
         self.model = self.init_model()
-        optimizer = Adam(lr = learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
         self.model.compile(optimizer = optimizer, loss = 'mean_squared_error', metrics = ['accuracy'])
     
     def InceptionLayer(self, a, b, c, d):
@@ -134,7 +140,7 @@ class MesoInception4(Classifier):
         y = Flatten()(x4)
         y = Dropout(0.5)(y)
         y = Dense(16)(y)
-        y = LeakyReLU(alpha=0.1)(y)
+        y = LeakyReLU(negative_slope=0.1)(y)
         y = Dropout(0.5)(y)
         y = Dense(1, activation = 'sigmoid')(y)
 

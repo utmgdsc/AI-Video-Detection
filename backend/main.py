@@ -1,12 +1,8 @@
 """
-Main orchestrator for AI Video Detection pipeline.
+CLI entrypoint for AI Video Detection.
 
-Flow:
-1. Receive video/link
-2. Separate audio and video
-3. Route to handlers (audio, video)
-4. Combine scores
-5. Return result
+This module keeps command-line behavior while delegating detector
+orchestration to the service layer for reuse by APIs/workers.
 """
 
 import os
@@ -18,12 +14,16 @@ from facenet_pytorch import MTCNN
 import pickle
 import numpy as np
 import pandas as pd
-
-from backend.handlers.audio_handler import AudioHandler
-from backend.handlers.video_handler import VideoHandler
-from backend.preprocessing.video_processor import separate_audio
-
+import argparse
 import logging
+import os
+import re
+
+import pandas as pd
+
+from backend.core.config import load_settings
+from backend.services.detector_service import DetectorService
+
 
 
 logging.basicConfig(
@@ -331,6 +331,7 @@ class DeepfakeDetector:
             return self._mean_fusion(list(individual_scores.values()))
 
 
+
 def print_output(result, video_idx):
 
     confidence = result["confidence"]
@@ -413,7 +414,6 @@ def main():
         type=str,
         required=False,
     )
-
     parser.add_argument(
         "--config",
         type=str,

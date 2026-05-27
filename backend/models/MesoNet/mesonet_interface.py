@@ -16,6 +16,8 @@ import requests
 import numpy as np
 import time
 import os
+import sys
+import shutil
 import warnings
 
 PRINT_DEBUG = True
@@ -44,6 +46,7 @@ class MesoNetClient:
         
         self.server_process = None
         self.server_log = None
+        self._model_loaded = False
 
         self.ensure_server_running()
     
@@ -55,7 +58,9 @@ class MesoNetClient:
         
         if "env_path" not in cfg:
             raise AttributeError("MesoNet env_path not found. See ensemble.yaml MesoNet env_path.")
-        self.env_path = os.getenv("MESONET_PYTHON_PATH", cfg["env_path"])
+        configured = os.getenv("MESONET_PYTHON_PATH", cfg["env_path"])
+        # Fall back to the current interpreter if the configured path doesn't exist
+        self.env_path = configured if os.path.isfile(configured) else sys.executable
         
         if "port" not in cfg:
             warnings.warn(f"Port not found in ensemble.yaml. Using default '{self.port}'.", UserWarning)
@@ -79,36 +84,32 @@ class MesoNetClient:
             debug("Server is running.")
         except:
             print("Starting MesoNet server...")
+            self._model_loaded = False  # fresh server has no model loaded
             self.start_server(save_log=False)
             debug("Waiting until ready...")
             self.wait_until_ready()
 
     def start_server(self, save_log=False):
-        output = subprocess.DEVNULL
-        if save_log:
-            debug("Trying to open server log")
-            os.makedirs(LOG_DIR, exist_ok=True)
-            self.server_log = open(os.path.join(LOG_DIR, f"meso_server-port-{self.port}.txt"), "a")
-            output = self.server_log
-
         debug("Trying to run server")
+        # Prefer the installed uvicorn script so we avoid the wrong Python
+        # interpreter (e.g. /usr/bin/python3.11 which lacks uvicorn).
+        uvicorn_bin = shutil.which("uvicorn")
+        if uvicorn_bin:
+            cmd = [uvicorn_bin, "mesonet_server:app", "--host", self.host, "--port", str(self.port)]
+        else:
+            cmd = [self.env_path, "-u", "-m", "uvicorn", "mesonet_server:app", "--host", self.host, "--port", str(self.port)]
+        debug(f"Using command: {cmd[0]}")
         self.server_process = subprocess.Popen(
-            [
-                self.env_path,
-                "-u",
-                "-m", "uvicorn",
-                "mesonet_server:app",
-                "--host", f"{self.host}",
-                "--port", f"{self.port}"
-            ],
+            cmd,
             cwd=BASE_DIR,
-            stdout=output,
-            stderr=output
+            stdout=sys.stderr,
+            stderr=sys.stderr,
         )
         debug("Server starting...")
 
     def wait_until_ready(self):
-        for _ in range(20):
+        # TensorFlow can take 15-20 s to initialise; allow up to 60 s total.
+        for _ in range(60):
             try:
                 debug("Testing connection...")
                 response = requests.get(self.url + "/test_server", timeout=1)
@@ -116,7 +117,7 @@ class MesoNetClient:
                 debug("Server ready.")
                 return
             except:
-                time.sleep(0.5)
+                time.sleep(1)
 
         raise RuntimeError("Server failed to start")
 
@@ -133,7 +134,7 @@ class MesoNetClient:
 
     def load_model(self, weights_path=None):
         debug("Asking server to load model...")
-        
+
         # (Low priority) DEFAULT_WEIGHT -> YAML config['weights_path'] -> weights_path (High priority)
         if weights_path is None:
             weights_path = self.weights_path
@@ -142,16 +143,20 @@ class MesoNetClient:
             self.url + "/load_model",
             json={
                 "architecture": self.architecture,
-                "weights_path": weights_path
-            }
+                "weights_path": weights_path,
+            },
+            timeout=60,  # model loading (weight deserialization) can take a while
         )
         debug(f"Load status: {response.status_code}")
         debug(f"Load text: {response.text}")
-        if response.status_code == 200:
+        # Check both HTTP status AND the JSON success flag — the server can
+        # return 200 with {"success": false} when weights fail to load.
+        if response.status_code == 200 and response.json().get("success"):
             debug("Model loaded successfully.")
+            self._model_loaded = True
             return self
         debug("Model failed to load.")
-        # Else model failed to load
+        self._model_loaded = False
         return None
         
 
@@ -169,9 +174,14 @@ class MesoNetClient:
                 'details': str
             }
         """
-        # Start a new server if the initial server was stopped
+        # If server crashed and restarted, the model needs to be reloaded.
+        server_was_running = self._model_loaded
         self.ensure_server_running()
-        
+        if server_was_running and not self._model_loaded:
+            # Server was restarted; reload the model before processing.
+            debug("Server restarted — reloading model...")
+            self.load_model()
+
         # Save faces to npy file
         os.makedirs(TEMP_DIR, exist_ok=True)
         np.save(self.faces_save_path, faces)
@@ -179,7 +189,8 @@ class MesoNetClient:
         # Send npy file path
         response = requests.post(
             self.url + "/process",
-            json={"faces_path": self.faces_save_path}
+            json={"faces_path": self.faces_save_path},
+            timeout=120,  # inference on a large batch can take tens of seconds
         )
         
         debug(f"Process status: {response.status_code}")

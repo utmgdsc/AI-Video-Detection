@@ -1,13 +1,30 @@
 # Ensemble Configuration
+# Optional environment overrides:
+# - AIVD_DEVICE
+# - AIVD_OUTPUT_DIR
+# - AIVD_TEMP_DIR
+# - AIVD_BATCH_SIZE
+# - AIVD_FRAME_SKIP
+# - AIVD_EFFICIENTNET_WEIGHTS_PATH
+# - AIVD_XCEPTION_WEIGHTS_PATH
+# - AIVD_MESONET_WEIGHTS_PATH
+# - AIVD_MESONET_ENV_PATH
+# - AIVD_AASIST_WEIGHTS_PATH
+# - AIVD_FAKEAVCELEB_METADATA_PATH
+# - AIVD_VALIDATE_PATHS
+# - AIVD_MAX_UPLOAD_SIZE_BYTES
+# - AIVD_ALLOWED_VIDEO_SUFFIXES
+# - AIVD_ALLOWED_VIDEO_MIME_TYPES
 device: "cuda" # cuda or cpu
 ensemble_method: stacking # Options: 'mean', 'weighted_average', 'weighted_voting' "majority_voting"
 stacking_model_path: ./backend/models/stacking/stacking_model.pkl
 output_dir: "./outputs/ensemble_results/"
+temp_dir: "./outputs/tmp/"
 batch_size: 60
 frame_skip: 30
 margin: 50
 min_face_size: 100
-compare_baseline_accuracy: true
+compare_baseline_accuracy: false
 decision_threshold: 0.5
 
 audio_decision_threshold: 0.5

@@ -32,7 +32,9 @@ def load_model(model_cfg):
     weights_path = None
     if "weights_path" in model_cfg:
         weights_path = model_cfg["weights_path"]
-    model.load_model(weights_path)
+    result = model.load_model(weights_path)
+    if result is None:
+        raise RuntimeError(f"MesoNet failed to load weights from: {weights_path}")
     return model
 
 

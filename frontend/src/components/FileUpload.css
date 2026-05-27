@@ -1,0 +1,104 @@
+.upload-container {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.upload-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, #ffffff, var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.upload-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.drag-zone {
+  border: 2px dashed rgba(102, 252, 241, 0.3);
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: rgba(31, 40, 51, 0.2);
+  position: relative;
+}
+
+.drag-zone.drag-active {
+  border-color: var(--accent-color);
+  background: rgba(102, 252, 241, 0.05);
+  box-shadow: 0 0 20px rgba(102, 252, 241, 0.2) inset;
+}
+
+.drag-zone.analyzing {
+  border-color: transparent;
+  background: rgba(31, 40, 51, 0.5);
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--accent-color);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.prompt-subtext {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.supported-formats {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.analyzing-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(102, 252, 241, 0.1);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
