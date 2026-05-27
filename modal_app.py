@@ -24,6 +24,10 @@ image = (
         "libgl1-mesa-glx",
         "libglib2.0-0",
         "libsndfile1",
+        # dlib build dependencies
+        "cmake",
+        "build-essential",
+        "libopenblas-dev",
     )
     .pip_install(
         # PyTorch – Modal's CUDA drivers are pre-installed on GPU containers
@@ -39,6 +43,8 @@ image = (
         "albumentations>=1.3.0",
         "efficientnet_pytorch",
         "timm>=0.9.0",
+        # dlib — required by XceptionNet's detect_from_video.py
+        "dlib",
         # Audio
         "librosa>=0.10.0",
         "soundfile>=0.12.1",
