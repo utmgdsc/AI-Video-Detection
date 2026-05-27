@@ -18,7 +18,13 @@ class Classifier:
     def predict(self, x):
         if x.size == 0:
             return []
-        return self.model.predict(x)
+        # Keras 3 / TF 2.16: model.predict() creates a tf.data.Dataset
+        # internally which fails when called from a non-main thread or
+        # in certain eager-mode edge cases. Calling the model directly
+        # as a callable avoids the tf.data pipeline entirely.
+        import tensorflow as tf
+        x_tensor = tf.constant(x, dtype=tf.float32)
+        return self.model(x_tensor, training=False).numpy()
     
     def fit(self, x, y):
         return self.model.train_on_batch(x, y)
